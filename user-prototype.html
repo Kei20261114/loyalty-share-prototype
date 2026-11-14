@@ -231,6 +231,9 @@ table.h th{color:#6b6290;font-weight:600;background:#faf8ff}
   <h5 style="margin-top:0">演示场景</h5>
   <div class="sc" id="scBtns"></div>
   <div id="desc" style="display:none"></div>
+  <h5>模拟其他入口充值</h5>
+  <div class="sc" id="extBtns"><button onclick="extDep(100)">大厅充值 ₱100</button><button onclick="extDep(250)">大厅充值 ₱250</button><button onclick="extDep(500)">大厅充值 ₱500</button><button onclick="extDep(750)">大厅充值 ₱750</button></div>
+  <div id="extNote" style="font-size:12px;color:#667;margin-top:8px;line-height:1.6">模拟用户在 789Bingo 大厅等其他入口充值到账（不经过活动页 Deposit）。到账金额按「从早到晚」自动计入尚未满足充值要求的期数：先可领取的期数，再可预支的期数。超出部分不计入后续期数。</div>
 </div>
 </div>
 
@@ -253,10 +256,10 @@ const SC={
 };
 let S,cur='a',pendOpen=false;
 function init(id){cur=id;const c=SC[id];S=JSON.parse(JSON.stringify(c));S.w=S.w||['Locked','Locked','Locked','Locked'];S.adv=S.adv||[];S.hist=S.hist||0;S.out=S.out||0;
- S.dw=(c.dw||[]).slice();S.bal=S.bal||13887.68;S.repaid=false;S.abNext=false;S.saNext=false;S.rec=[];
+ S.dw=(c.dw||[]).slice();S.part={};S.bal=S.bal||13887.68;S.repaid=false;S.abNext=false;S.saNext=false;S.rec=[];
  S.rec=(c.rec||[]).map(r=>({time:r[0],amt:r[1],ev:r[2]}));
  document.querySelectorAll('#scBtns button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
- document.getElementById('desc').innerHTML=c.desc;
+ document.getElementById('desc').innerHTML=c.desc;document.getElementById('extNote').innerHTML='模拟用户在 789Bingo 大厅等其他入口充值到账（不经过活动页 Deposit）。到账金额按「从早到晚」自动计入尚未满足充值要求的期数：先可领取的期数，再可预支的期数。超出部分不计入后续期数。';
  document.getElementById('homeImg').src=IMG.homeOut;
  setPend(false);go('home');renderAct();
 }
@@ -264,6 +267,11 @@ const E=()=>S.eligible!==false;
 const received=()=>S.w.filter(s=>s==='Claimed').length;
 const availN=()=>S.w.filter(s=>s==='Available').length;
 function reqDep(){return availN()*DEP}
+function depOrder(){const V=view();const a=V.map((x,j)=>x==='Available'&&!S.dw.includes(j)?j:-1).filter(j=>j>=0),b=V.map((x,j)=>x==='Advance'&&!S.dw.includes(j)?j:-1).filter(j=>j>=0);return a.concat(b);}
+function stillNeed(j){return DEP-(S.part[j]||0)}
+function allocate(amt){let pool=amt;for(const j of depOrder()){if(pool<=0)break;const n=stillNeed(j);if(pool>=n){S.dw.push(j);delete S.part[j];pool-=n;}else{S.part[j]=(S.part[j]||0)+pool;pool=0;}}return amt-pool;}
+function coverFor(i,kind){const o=depOrder();let k=o.indexOf(i);let ws=o.slice(0,k+1);if(kind==='adv'&&S.sa){o.forEach(j=>{if(view()[j]==='Advance'&&!ws.includes(j))ws.push(j)});}return ws;}
+function extDep(amt){if(!S)return;const used=allocate(amt);renderAct();const n=document.getElementById('extNote');n.innerHTML='<b>已模拟大厅充值 ₱'+amt.toLocaleString()+'</b>：计入 ₱'+used.toLocaleString()+(amt>used?'，₱'+(amt-used).toLocaleString()+' 无可计入的期数，不计入':'')+'。请查看活动页按钮变化。';if(document.getElementById('act').classList.contains('on')===false){go('act');}}
 const ST={Available:{img:'clock',p:'Claim',cls:'k-Available'},Locked:{img:'lock',p:'Locked',cls:'k-Upcoming'},Claimed:{img:'check',p:'Claimed',cls:'k-Claimed'},Advance:{img:'ff',p:'Advance',cls:'k-Advanced2'}};
 function view(){if(!E())return ['Locked','Locked','Locked','Locked'];const v=S.w.slice();const lk=v.map((x,j)=>x==='Locked'?j:-1).filter(j=>j>=0);
  if(S.sa)lk.forEach(j=>v[j]='Advance');else if(S.ab&&lk.length)v[lk[0]]='Advance';return v;}
@@ -303,12 +311,15 @@ function renderAct(){
  <div class="card">${ttl('tbolt','Advance & Benefits',1)}<div class="adv">${adv('ab')}${adv('sa')}</div></div>`;
 }
 function weekDeposit(i,kind){
- const ws=kind==='adv'?weeksToAdvance(i):[i],need=ws.filter(j=>!S.dw.includes(j)).length*DEP;
+ const ws=coverFor(i,kind),req=ws.length*DEP,need=ws.reduce((a,j)=>a+stillNeed(j),0),got=req-need;
  openM(`<h4>Deposit <span class="x" onclick="closeM()">✕</span></h4>
- <div class="row"><span>${kind==='adv'?'Advance':'Claim'}</span><b>${ws.map(j=>'Week '+(j+1)).join(', ')}</b></div>
- <div class="row"><span>Deposit amount (10%)</span><b>${fmt(need)}</b></div>
- <button class="btn green" onclick="depOk([${ws}],'${kind}')">Confirm Deposit ${fmt(need)}</button>`);}
-function depOk(ws,kind){ws.forEach(j=>{if(!S.dw.includes(j))S.dw.push(j)});closeM();renderAct();toastI('ok','Deposit successful',kind==='adv'?'Tap Advance to get your rewards':'Tap Collect to get your reward');}
+ <div class="row"><span>For</span><b>${ws.map(j=>'Week '+(j+1)).join(', ')}</b></div>
+ <div class="row"><span>Required (10%)</span><b>${fmt(req)}</b></div>
+ ${got>0?`<div class="row"><span>Already deposited</span><b>${fmt(got)}</b></div>`:''}
+ <div class="row"><span>Still needed</span><b>${fmt(need)}</b></div>
+ <div class="tip">Deposits from any channel count, e.g. the lobby or wallet.</div>
+ <button class="btn green" onclick="depOk(${need},'${kind}')">Deposit ${fmt(need)}</button>`);}
+function depOk(amt,kind){allocate(amt);closeM();renderAct();toastI('ok','Deposit successful',kind==='adv'?'Tap Advance to get your rewards':'Tap Collect to get your reward');}
 function fly(el,done){const sc=document.getElementById('screen').getBoundingClientRect(),f=el.getBoundingClientRect();
  for(let k=0;k<8;k++){const c=document.createElement('img');c.src=IMG.coins;c.className='flycoin';document.getElementById('screen').appendChild(c);
   const x0=f.left-sc.left+f.width/2-12+(Math.random()*24-12),y0=f.top-sc.top+f.height/2-12,x1=sc.width-60,y1=20;
@@ -324,7 +335,7 @@ function tapWeek(i){const s=view()[i],el=document.getElementById('wk'+i);const h
   const col=S.w.map((x,j)=>x==='Available'&&S.dw.includes(j)?j:-1).filter(j=>j>=0);
   col.forEach(j=>{S.w[j]='Claimed';S.hist++;S.bal+=W;S.rec.unshift({time:'2026-11-13 '+now(),amt:W,ev:'Claim'});const e2=document.getElementById('wk'+j);const b2=e2&&e2.querySelector('.wb');if(b2)b2.style.visibility='hidden';e2&&fly(e2);});
   if(!S.sa&&S.hist>=8)S.saNext=true;if(!S.ab&&S.hist>=4)S.abNext=true;
-  S.dw=S.dw.filter(j=>!ws.includes(j)&&!col.includes(j));S.out+=ws.length*W;S.bal+=ws.length*W;hideBtn();
+  S.dw=S.dw.filter(j=>!ws.includes(j)&&!col.includes(j));ws.concat(col).forEach(j=>delete S.part[j]);S.out+=ws.length*W;S.bal+=ws.length*W;hideBtn();
   fly(el,()=>{renderAct();if(col.length)bumpBars();});}
 }
 function pulse(sel){const e=document.querySelector(sel);e&&e.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:300,iterations:2});}
