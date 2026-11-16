@@ -65,7 +65,7 @@ textarea.rt{width:100%;height:190px;border:none;padding:10px;font:13px/1.6 inher
 .pv .h{background:linear-gradient(90deg,#7b4fd6,#9b6bff);color:#fff;text-align:center;font-weight:700;padding:10px}
 .pv .b{padding:10px 14px;font-size:12px;white-space:pre-wrap;line-height:1.7;max-height:260px;overflow:auto}
 /* report */
-.cards{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:14px}
+.cards{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-bottom:14px}
 .cd{border:1px solid #ebeef5;border-radius:4px;padding:10px 12px}.cd .k{color:#909399;font-size:12px}.cd .v{font-size:19px;font-weight:700;color:#303133;margin-top:2px}
 .cd.red .v{color:#f56c6c}.cd.grn .v{color:#13ce66}
 .flt{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
@@ -93,8 +93,9 @@ input[type=radio]:checked,input[type=checkbox]:checked{border-color:#409eff;back
 input[type=radio]:checked:after{content:"";position:absolute;left:4px;top:4px;width:4px;height:4px;border-radius:50%;background:#fff}
 input[type=checkbox]:checked:after{content:"";position:absolute;left:4px;top:1px;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
 .rad label{display:inline-flex;align-items:center;color:#606266}.rad label:has(input:checked){color:#409eff}
+.lng{cursor:pointer;opacity:.7}.lng.on{opacity:1;text-decoration:underline}
 </style></head><body>
-<div class="top1"><span>当前时间: <span class="t" id="clock">2026/11/14 11:50:00 -04:00</span></span><span class="r">简体中文　cs_kei ▾</span></div>
+<div class="top1"><span>当前时间: <span class="t" id="clock">2026/11/14 11:50:00 -04:00</span></span><span class="r"><span class="lng" onclick="setLang('zh')" id="lzh">简体中文</span> / <span class="lng" onclick="setLang('en')" id="len">English</span>　cs_kei ▾</span></div>
 <div class="top2">🔔 <span>在线人数: <span class="y0">9</span></span><span>当日注册: <span class="y0">5</span></span><span>当日充值成功: <span class="y0">8</span></span><span>充值:<b class="r0">0</b></span><span>提款:<b class="g0">0</b></span><span>风控审核:<b class="g0">0</b></span><span style="cursor:pointer" onclick="alerts()">预算告警:<b class="r0" id="alc">0</b></span></div>
 <div class="alstrip" id="alstrip"></div>
 <div class="wrap">
@@ -204,7 +205,7 @@ function tRule(){$('ebody').innerHTML=`
  ${footer()}`;calc();}
 function calc(){const el=$('calc');if(!el)return;const L=600000,m=L/(+E.divisor||1),w=m/4,d=w*(+E.depRate||0)/100,wg=w*(+E.wager||0);
  el.innerHTML=`<div class="row" style="margin:4px 0"><b class="u">试算</b><span class="u">3 个月亏损 ₱600,000 → 当月返还 <b>₱${fmt(m)}</b> → 每期 <b>₱${fmt(w)}</b> → 每期充值要求 <b>₱${fmt(d)}</b> → 每期流水要求 <b>₱${fmt(wg)}</b></span></div>`;}
-function rulesText(){return E.rules.replace(/\{返还除数\}/g,E.divisor).replace(/\{充值比例\}/g,E.depRate).replace(/\{流水倍数\}/g,E.wager).replace(/\{AB期数\}/g,E.abWeeks).replace(/\{AB等级\}/g,E.abVip).replace(/\{SA期数\}/g,E.saWeeks).replace(/\{SA等级\}/g,E.saVip);}
+function rulesText(){return E.rules.replace(/\{divisor\}/g,E.divisor).replace(/\{deposit_ratio\}/g,E.depRate).replace(/\{wagering\}/g,E.wager).replace(/\{ab_periods\}/g,E.abWeeks).replace(/\{ab_vip\}/g,E.abVip).replace(/\{sa_periods\}/g,E.saWeeks).replace(/\{sa_vip\}/g,E.saVip).replace(/\{返还除数\}/g,E.divisor).replace(/\{充值比例\}/g,E.depRate).replace(/\{流水倍数\}/g,E.wager).replace(/\{AB期数\}/g,E.abWeeks).replace(/\{AB等级\}/g,E.abVip).replace(/\{SA期数\}/g,E.saWeeks).replace(/\{SA等级\}/g,E.saVip);}
 function tCnt(){$('ebody').innerHTML=`
  <div class="box"><h3 class="sec">图片设置</h3>
   <div class="row"><div class="lb"><i>*</i>活动页顶部横幅</div><div class="up"><span class="btn" onclick="E.banner=true;tCnt();toast('上传成功')">选择文件</span><div class="thumb" style="${E.banner?'background:linear-gradient(120deg,#ff7eb3,#9b6bff);color:#fff;font-weight:700':''}">${E.banner?'YOUR SHARE. YOUR REWARDS.':'未上传'}</div><span class="hint">仅支持 .PNG .JPG，不超过 2MB，建议 750×360</span></div></div>
@@ -243,6 +244,7 @@ function tRpt(){const act=E.id&&ACTS.find(x=>x.id===E.id);const src=(act&&act.us
  const pages=Math.max(1,Math.ceil(rows.length/RPS));if(RP>pages)RP=pages;const pr=rows.slice((RP-1)*RPS,RP*RPS);
  $('ebody').innerHTML=`<div class="cards">
  <div class="cd"><div class="k">参与人数</div><div class="v">${users}</div></div>
+ <div class="cd"><div class="k">预算金额</div><div class="v">₱${fmt(act?act.budget:0)}</div><div class="sub">实际发放占预算 ${act&&act.budget?(act2/act.budget*100).toFixed(1):0}%</div></div>
  <div class="cd"><div class="k">预计发放金额</div><div class="v">₱${fmt(exp)}</div><div class="sub">结算时达标用户当月返还合计</div></div>
  <div class="cd grn"><div class="k">实际发放金额</div><div class="v">₱${fmt(act2)}</div><div class="sub">领取 + 预支 − 还款${exp?' · 发放率 '+(act2/exp*100).toFixed(1)+'%':''}</div></div>
  <div class="cd"><div class="k">领取金额</div><div class="v">₱${fmt(cl)}</div></div>
@@ -259,5 +261,55 @@ function tRpt(){const act=E.id&&ACTS.find(x=>x.id===E.id);const src=(act&&act.us
  <td>${r.wreq?(r.wdone>=r.wreq?'<span style="color:#13a356;font-weight:600">已完成</span>':'₱'+fmt(r.wdone)):'—'}</td></tr>`).join(''):'<tr><td colspan="12" style="color:#999;padding:30px">No Data</td></tr>'}</table>
  <div class="pg">Total ${rows.length}　${RPS}/page　<span class="pgb ${RP>1?'':'dis'}" onclick="if(RP>1){RP--;tRpt()}">‹</span>${Array.from({length:pages},(_,k)=>`<span class="pgb ${k+1===RP?'on':''}" onclick="RP=${k+1};tRpt()">${k+1}</span>`).join('')}<span class="pgb ${RP<pages?'':'dis'}" onclick="if(RP<${pages}){RP++;tRpt()}">›</span></div>`;}
 showList();
+/* ---------- LANGUAGE ---------- */
+const TR=[["请填写：", "Please fill in: "],["、", ", "],["活动已开启", "Activity opened"],["活动已关闭", "Activity closed"],["开启活动", "Open activity"],["确认开启「", "Open \""],["」？开启后玩家端立即可见。", "\"? Players will see it immediately."],["关闭活动", "Close activity"],["确认关闭「", "Close \""],["」？关闭后玩家端不可见；已生成未领取的奖励及待还款记录保留。", "\"? Players will no longer see it; generated unclaimed rewards and repayment records are kept."],["确定关闭", "Confirm close"],["确定", "Confirm"],["导入成功 3 人", "Imported 3 users"],["模板已下载", "Template downloaded"],["名单共", "Users in list:"],["上传成功", "Uploaded"],["导出任务已创建", "Export task created"],["奖励规则中的数值需大于 0", "Values in Reward Rules must be greater than 0"],["请填写预支解锁的 VIP 等级", "Enter the VIP levels for unlocking advances"],["保存失败：「", "Save failed: \""],["」正在进行中，同一时间只能开启一个活动", "\" is in progress; only one activity can be open at a time"],["保存成功", "Saved"],["配置已完成，可在活动列表开启活动", "All settings done. Open the activity from the list"],["无法开启：请先完成「", "Cannot open: complete \""],["已用", "Used"],
+['当前时间:','Current time:'],['在线人数:','Online:'],['当日注册:','Sign-ups today:'],['当日充值成功:','Deposits today:'],['充值:','Deposit:'],['提款:','Withdraw:'],['风控审核:','Risk review:'],['预算告警:','Budget alerts:'],
+['菜单 ☰','Menu ☰'],['砸金蛋送彩金活动','Golden Egg Bonus'],['新输返活动','New Loss Rebate'],['输返活动','Loss Rebate'],['充值活动','Deposit Promo'],['返水活动','Cashback Promo'],['签到活动','Check-in Promo'],['营销管理','Marketing'],
+['俸禄金活动列表','Loyalty Share Rewards activities'],['俸禄金 · 11月','Loyalty Share Rewards · Nov'],['俸禄金 · 10月','Loyalty Share Rewards · Oct'],['俸禄金 · 12月','Loyalty Share Rewards · Dec'],['俸禄金 测试','Loyalty Share Rewards test'],['俸禄金活动','Loyalty Share Rewards activity'],['俸禄金','Loyalty Share Rewards'],
+['活动中心','Promotion Center'],['数据报表','Data Report'],['位置','Location'],
+['以下活动消耗已达预算 70%：','These activities have used 70% of budget:'],['预算消耗告警','Budget alert'],['全部关闭','Dismiss all'],['预算告警','Budget alerts'],
+['实际发放金额 / 预算占比','Actual payout / share of budget'],['预计发放金额','Expected payout'],['实际发放金额','Actual payout'],['实际消耗','Actual spend'],['消耗比例','Ratio'],['暂无告警','No alerts'],['关闭窗口','Close'],
+['单活动运行：','Single activity:'],['同一时间只能开启一个俸禄金活动。开启新活动前，需先关闭当前进行中的活动。','Only one Loyalty Share Rewards activity can be open at a time. Close the activity in progress before opening a new one.'],
+['＋ 新建活动','＋ New activity'],['活动编号 / 名称','ID / name'],['参与方式','Participation'],['活动时间','Activity period'],['展示时间','Display period'],['参与人数','Participants'],['待还款','To repay'],['创建时间','Created at'],['修改人','Modified by'],
+['且 3个月亏损 ≥','and 3-month loss ≥'],['3个月亏损 ≥','3-month loss ≥'],['占预算','Budget'],['发放率','payout rate'],['进行中','In progress'],['配置中','Configuring'],['缺：','Missing:'],['已停用','Stopped'],['未开启','Not opened'],
+['开启失败：请先完成「','Failed to open: complete "'],['开启失败：「','Failed to open: "'],['」正在进行中，请先关闭','" is in progress, close it first'],['」「','", "'],['」','"'],
+['返回活动列表','Back to list'],['新建活动','New activity'],['保存并下一步','Save and next'],['保存配置','Save'],['活动已创建，请继续配置「奖励规则」','Activity created. Continue with Reward Rules'],['请先保存「活动配置」','Save Activity Settings first'],
+['基础信息','Basic info'],['请输入活动名称','Enter activity name'],['仅后台展示，用于区分各期活动；玩家端活动名称固定为「Loyalty Share Rewards','Admin only, to tell activities apart; the player-facing name is fixed as "Loyalty Share Rewards"'],
+['已关闭 · 新建时默认关闭，三项配置完成后可在活动列表开启','Off · new activities start off; open from the list once all three tabs are done'],['已开启 · 玩家端可见','On · visible to players'],['已关闭 · 玩家端不可见','Off · hidden from players'],
+['选项来自「活动配置 › 活动类别管理','Options from Promotion Settings › Category Management'],['时间配置','Time'],['未配置时与活动时间一致','Same as activity period if empty'],['参与条件','Eligibility'],
+['按 VIP 等级 + 近 3 个月亏损金额','By VIP level + 3-month loss'],['按近 3 个月亏损金额','By 3-month loss'],['二选一；选第二种时，两个条件需同时满足','Choose one; with the second, both conditions must be met'],
+['VIP 最低等级','Minimum VIP level'],['及以上','and above'],['最低亏损金额','Minimum loss'],['近 3 个完整自然月符合条件亏损 ≥ 该金额','3-month qualified loss ≥ this amount'],['（与 VIP 等级同时满足）',' (together with the VIP level)'],['可参与',' to join'],
+['名单微调','List adjustment'],['白名单强制纳入（忽略参与门槛）；黑名单强制排除。仅支持 .csv / .txt','Whitelist always included (ignores threshold); blacklist always excluded. .csv / .txt only'],['白名单','Whitelist'],['黑名单','Blacklist'],
+['（逗号 / 分号 / 换行分隔）',' (comma / semicolon / new line)'],['批量导入','Import'],['下载模板','Template'],['查看名单','View list'],['已导入','Imported'],[' 人',''],
+['活动总预算','Total budget'],['预算金额','Budget'],['实际发放占预算','Actual payout of budget'],['已用金额 = 实际发放金额 = 领取 + 预支 − 还款','Used = actual payout = claims + advances − repayments'],['预算','Budget'],
+['返还配置','Return'],['结算周期','Settlement cycle'],['每月 1 号 · 近 3 个完整自然月滚动','1st monthly · last 3 full months'],['返还除数','Return divisor'],['当月返还 = 3 个月亏损 ÷ 除数','Monthly return = 3-month loss ÷ divisor'],
+['发放期数','Periods'],['固定 4 期','Fixed: 4'],['每月前 4 个周五各生成 1 期；最多累计 4 期，超出时最新一期覆盖最早一期','One on each of the first 4 Fridays; up to 4 accumulated, newest replaces oldest'],
+['领奖充值比例','Deposit ratio'],['%，领取与预支均需满足充值要求 = 本次金额 × 比例（任意入口充值到账均可计入）','%, claims and advances require deposit = amount × ratio (any channel counts)'],
+['预支配置','Advance'],['解锁：历史累计领取期数 ≥','Unlock: claimed periods ≥'],['或 VIP 等级 ≥','or VIP level ≥'],['可预支范围','Range'],['可用时间','Available'],['下一期','Next period'],['解锁后下个月','Month after unlock'],['本月剩余全部期数','All remaining this month'],['功能','Feature'],
+['还款方式','Repayment'],['从可用余额全额扣除（不支持部分还款）','Full deduction from balance (no partial)'],['还款后','After repayment'],
+['还款成功后，被预支的期数立即恢复为可领取（Claim），由用户手动领取，不论原定周五是否已到；预支时已满足充值要求，无需再充值。仅限当月：被新月份数据覆盖后不再恢复','Advanced periods become claimable (Claim) right away and the user claims them manually, whether or not the original Friday has come; no further deposit. This month only: not restored once replaced by the new month'],
+['流水配置','Wagering'],['流水倍数','Wagering multiplier'],['倍 · 流水要求 = 奖励金额 × 倍数','x · wagering = reward × multiplier'],['适用于','Applies to'],['累计领取','Accumulated claims'],
+['试算','Trial'],['3 个月亏损 ₱600,000 → 当月返还','3-month loss ₱600,000 → monthly return'],['每期充值要求','deposit per period'],['每期流水要求','wagering per period'],['每期','per period'],
+['图片设置','Images'],['活动页顶部横幅','Top banner'],['选择文件','Choose file'],['未上传','Not uploaded'],['仅支持 .PNG .JPG，不超过 2MB，建议 750×360','.PNG .JPG only, max 2MB, 750×360 recommended'],['活动页底部图','Footer image'],['选填','Optional'],
+['Rules 文案','Rules text'],['规则内容','Rules content'],['插入变量：','Insert variable:'],['请输入玩家端 Rules 文案，可插入上方变量','Enter the player-side Rules text; insert variables above'],['变量在玩家端自动替换为「奖励规则」中的当前数值；右侧为玩家端预览','Variables are replaced with current Reward Rules values on the player side; preview on the right'],
+['{充值比例}','{deposit_ratio}'],['{流水倍数}','{wagering}'],['{AB期数}','{ab_periods}'],['{AB等级}','{ab_vip}'],['{SA期数}','{sa_periods}'],['{SA等级}','{sa_vip}'],['{返还除数}','{divisor}'],
+['活动配置','Activity Settings'],['奖励规则','Reward Rules'],['内容配置','Content'],['活动名称','Activity name'],['活动状态','Status'],['活动类型','Promotion type'],
+['结算时达标用户当月返还合计','Total monthly return of eligible users'],['领取 + 预支 − 还款','claims + advances − repayments'],['领取金额','Claimed'],['预支金额','Advanced'],['还款金额','Repaid'],
+['会员账号：','Member:'],['请输入账号','Account'],['事件：','Event:'],['时间：','Time:'],['🔍 搜索','🔍 Search'],['重置','Reset'],['导出','Export'],['会员账号','Member'],['结算月','Settlement month'],['3个月亏损','3-month loss'],['当月返还','Monthly return'],
+['事件','Event'],['金额','Amount'],['充值金额','Deposit'],['流水要求','Wagering req.'],['流水完成','Wagering done'],['已完成','Completed'],['期数','Period'],['领取','Claim'],['预支','Advance'],['还款','Repay'],['全部','All'],['时间','Time'],
+['活动类型','Activity type'],['活动名称','Activity name'],['操作','Actions'],['查看','View'],['关闭','Dismiss'],['数据','Data'],['修改','Edit'],['状态','Status'],['取消','Cancel'],['倍','x']
+];
+TR.sort((a,b)=>b[0].length-a[0].length);
+function trS(s){if(!/[一-鿿「」：]/.test(s))return s;for(const [a,b] of TR){if(s.includes(a))s=s.split(a).join(b);}return s;};
+function translateAll(){const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const t=trS(n.nodeValue);if(t!==n.nodeValue)n.nodeValue=t;}
+ document.querySelectorAll('input,textarea').forEach(e=>{if(e.placeholder){const t=trS(e.placeholder);if(t!==e.placeholder)e.placeholder=t;}if(e.value&&/[一-鿿]/.test(e.value))e.value=trS(e.value);});
+ document.querySelectorAll('option').forEach(o=>{const t=trS(o.textContent);if(t!==o.textContent)o.textContent=t;});};
+
+let LANG=(location.hash==='#en')?'en':'zh';
+function setLang(l){if(l===LANG)return;location.hash=l==='en'?'en':'';location.reload();}
+$('lzh').classList.toggle('on',LANG==='zh');$('len').classList.toggle('on',LANG==='en');
+if(LANG==='en'){document.documentElement.lang='en';document.title='Loyalty Share Rewards Admin Prototype';let busy=false;
+ const run=()=>{if(busy)return;busy=true;translateAll();busy=false;};
+ new MutationObserver(()=>run()).observe(document.body,{childList:true,subtree:true,characterData:true});run();}
 setInterval(()=>{const d=new Date();$('clock').textContent='2026/11/14 '+[d.getHours(),d.getMinutes(),d.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':')+' -04:00'},1000);
 </script></body></html>
