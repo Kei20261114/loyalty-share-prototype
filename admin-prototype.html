@@ -175,10 +175,10 @@ function tCfg(){$('ebody').innerHTML=`
 function tRule(){$('ebody').innerHTML=`
  <div class="box"><h3 class="sec">返还配置</h3>
   <div class="row"><div class="lb">结算周期</div><input class="in ro" readonly value="每月 1 号 · 近 3 个完整自然月滚动"></div>
-  <div class="row"><div class="lb"><i>*</i>返还除数</div><input class="in s" type="number" ${v('divisor')} oninput="E.divisor=this.value;calc()"><span class="u">当月返还 = 3 个月亏损 ÷ 除数</span></div>
-  <div class="row"><div class="lb"><i>*</i>拆分期数</div><input class="in s" type="number" ${v('split')} oninput="E.split=this.value;calc()"><span class="u">期，每月前 N 个周五各生成 1 期</span></div>
+  <div class="row"><div class="lb"><i>*</i>返还除数</div><input class="in s" type="number" value="${E.divisor??''}" oninput="E.divisor=this.value;calc()"><span class="u">当月返还 = 3 个月亏损 ÷ 除数</span></div>
+  <div class="row"><div class="lb"><i>*</i>拆分期数</div><input class="in s" type="number" value="${E.split??''}" oninput="E.split=this.value;calc()"><span class="u">期，每月前 N 个周五各生成 1 期</span></div>
   <div class="row"><div class="lb"><i>*</i>最多累计期数</div><input class="in s" type="number" ${v('maxAcc')}><span class="u">期，超出时最新一期覆盖最早一期</span></div>
-  <div class="row"><div class="lb"><i>*</i>领奖充值比例</div><input class="in s" type="number" ${v('depRate')} oninput="E.depRate=this.value;calc()"><span class="u">%，领取与预支均需先充值 = 本次金额 × 比例</span></div>
+  <div class="row"><div class="lb"><i>*</i>领奖充值比例</div><input class="in s" type="number" value="${E.depRate??''}" oninput="E.depRate=this.value;calc()"><span class="u">%，领取与预支均需先充值 = 本次金额 × 比例</span></div>
   <div class="cond" id="calc"></div></div>
  <div class="box"><h3 class="sec">预支配置</h3>
   <table class="t" style="width:760px"><tr><th>功能</th><th>解锁：历史累计领取期数 ≥</th><th>或 VIP 等级 ≥</th><th>可预支范围</th><th>可用时间</th></tr>
@@ -186,7 +186,7 @@ function tRule(){$('ebody').innerHTML=`
   <tr><td><b>Super Advance</b></td><td><input class="in s" type="number" ${v('saWeeks')}></td><td><span class="vipin"><span class="vp">VIP</span><input class="in s" inputmode="numeric" maxlength="3" value="${E.saVip}" oninput="this.value=this.value.replace(/[^0-9]/g,'');E.saVip=this.value===''?'':+this.value"></span></td><td>本月剩余全部期数</td><td>解锁后下个月</td></tr></table>
   <div class="row"><div class="lb">还款方式</div><input class="in ro" readonly value="从可用余额全额扣除（不支持部分还款）" style="width:300px"></div></div>
  <div class="box"><h3 class="sec">流水配置</h3>
-  <div class="row"><div class="lb"><i>*</i>流水倍数</div><input class="in s" type="number" ${v('wager')} oninput="E.wager=this.value;calc()"><span class="u">倍</span>
+  <div class="row"><div class="lb"><i>*</i>流水倍数</div><input class="in s" type="number" value="${E.wager??''}" oninput="E.wager=this.value;calc()"><span class="u">倍</span>
    <span class="rad" style="margin-left:14px">计入：<label><input type="checkbox" ${E.wagerDep?'checked':''} onchange="E.wagerDep=this.checked;calc()">充值金额</label><label><input type="checkbox" ${E.wagerBonus?'checked':''} onchange="E.wagerBonus=this.checked;calc()">奖励金额</label></span></div>
   <div class="row"><div class="lb">适用于</div><span class="u">Weekly Return · 累计领取 · Advance Bonus · Super Advance</span></div></div>
  ${footer()}`;calc();}
