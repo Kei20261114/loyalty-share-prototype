@@ -94,6 +94,9 @@ input[type=radio]:checked:after{content:"";position:absolute;left:4px;top:4px;wi
 input[type=checkbox]:checked:after{content:"";position:absolute;left:4px;top:1px;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
 .rad label{display:inline-flex;align-items:center;color:#606266}.rad label:has(input:checked){color:#409eff}
 .lng{cursor:pointer;opacity:.7}.lng.on{opacity:1;text-decoration:underline}
+.pg{gap:8px}.pgsz{position:relative;display:inline-flex;align-items:center;gap:6px;border:1px solid #dcdfe6;border-radius:3px;padding:3px 10px;cursor:pointer;color:#606266;background:#fff;min-width:96px;justify-content:space-between}.pgsz:hover{border-color:#409eff}.pgsz i{font-style:normal;color:#c0c4cc}
+.pgdd{display:none;position:absolute;left:0;bottom:calc(100% + 4px);background:#fff;border:1px solid #e4e7ed;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,.1);padding:6px 0;z-index:20;min-width:110px}.pgdd span{display:block;padding:6px 18px;color:#606266;white-space:nowrap}.pgdd span:hover{background:#f5f7fa}.pgdd span.on{color:#409eff;font-weight:700}
+.pggo{width:48px!important;height:28px;text-align:center;padding:2px 4px}
 </style></head><body>
 <div class="top1"><span>当前时间: <span class="t" id="clock">2026/11/14 11:50:00 -04:00</span></span><span class="r"><span class="lng" onclick="setLang('zh')" id="lzh">简体中文</span> / <span class="lng" onclick="setLang('en')" id="len">English</span>　cs_kei ▾</span></div>
 <div class="top2">🔔 <span>在线人数: <span class="y0">9</span></span><span>当日注册: <span class="y0">5</span></span><span>当日充值成功: <span class="y0">8</span></span><span>充值:<b class="r0">0</b></span><span>提款:<b class="g0">0</b></span><span>风控审核:<b class="g0">0</b></span><span style="cursor:pointer" onclick="alerts()">预算告警:<b class="r0" id="alc">0</b></span></div>
@@ -102,12 +105,14 @@ input[type=checkbox]:checked:after{content:"";position:absolute;left:4px;top:1px
 <div class="side"><div class="mh">菜单 ☰</div>
  <div class="grp">活动中心 <span>︿</span></div>
  <div class="mi">充值活动</div><div class="mi">返水活动</div><div class="mi">输返活动</div><div class="mi">新输返活动</div><div class="mi">签到活动</div><div class="mi">砸金蛋送彩金活动</div>
- <div class="mi on" onclick="showList()">俸禄金</div>
- <div class="grp">营销管理 <span>﹀</span></div><div class="grp">数据报表 <span>﹀</span></div>
+ <div class="mi on" id="miLsr" onclick="showList()">俸禄金</div>
+ <div class="grp">营销管理 <span>﹀</span></div>
+ <div class="grp">日志管理 <span>︿</span></div>
+ <div class="mi" onclick="toast('演示中不可点击',1)">登录日志</div><div class="mi" id="miLog" onclick="showLog()">操作日志</div><div class="mi" onclick="toast('演示中不可点击',1)">会员操作日志</div><div class="mi" onclick="toast('演示中不可点击',1)">登录审计日志</div><div class="grp">数据报表 <span>﹀</span></div>
 </div>
 <div class="main">
- <div class="crumb">位置<span>›</span>活动中心<span>›</span>俸禄金</div>
- <div class="tabs"><div>充值活动 ×</div><div>签到活动 ×</div><div>砸金蛋送彩金活动 ×</div><div class="on">俸禄金 ×</div></div>
+ <div class="crumb" id="crumb">位置<span>›</span>活动中心<span>›</span>俸禄金</div>
+ <div class="tabs" id="ptabs"><div>充值活动 ×</div><div>签到活动 ×</div><div class="on" onclick="showList()" style="cursor:pointer">俸禄金 ×</div><div onclick="showLog()" style="cursor:pointer">操作日志 ×</div></div>
  <div id="view"></div>
 </div></div>
 <div class="toast" id="toast"></div>
@@ -115,50 +120,69 @@ input[type=checkbox]:checked:after{content:"";position:absolute;left:4px;top:1px
 <script>
 const VIPS=Array.from({length:81},(_,i)=>i);
 let ACTS=[
- {id:1203,name:'俸禄金 · 11月',done:{cfg:1,rule:1,cnt:1},mode:'vipl',vip:40,loss:50000,start:'2026-11-01',end:'2026-11-30',ds:'2026-11-01',de:'2026-11-30',budget:1000000,exp:752288.33,used:721500,users:143,paid:721500,adv:96000,owe:22500,on:true,created:'2026-10-28 15:20',by:'cs_kei',types:['Retention']},
- {id:1202,name:'俸禄金 · 10月',done:{cfg:1,rule:1,cnt:1},mode:'loss',vip:40,loss:50000,start:'2026-10-01',end:'2026-10-31',ds:'2026-10-01',de:'2026-11-07',budget:2500000,exp:1907939.01,used:1312400,users:754,paid:1312400,adv:210000,owe:0,on:false,created:'2026-09-25 10:02',by:'90556663',types:['Retention']},
- {id:1201,name:'俸禄金 测试',done:{cfg:1,rule:1,cnt:0},mode:'loss',vip:40,loss:100000,start:'2026-09-01',end:'2026-09-30',ds:'2026-09-01',de:'2026-09-30',budget:100000,exp:0,used:0,users:0,paid:0,adv:0,owe:0,on:false,created:'2026-08-30 18:11',by:'90556998',types:[]}
+ {id:1203,name:'俸禄金 · 11月',done:{cfg:1,rule:1,cnt:1},useLoss:true,useVip:true,months:3,vip:40,loss:50000,cons:2000,start:'2026-11-01',end:'2026-11-30',ds:'2026-11-01',de:'2026-11-30',budget:1000000,exp:752288.33,used:721500,users:143,paid:721500,adv:96000,owe:22500,on:true,created:'2026-10-28 15:20',by:'cs_kei'},
+ {id:1202,name:'俸禄金 · 10月',done:{cfg:1,rule:1,cnt:1},useLoss:true,useVip:false,months:3,vip:40,loss:50000,cons:2000,start:'2026-10-01',end:'2026-10-31',ds:'2026-10-01',de:'2026-11-07',budget:2500000,exp:1907939.01,used:1312400,users:754,paid:1312400,adv:210000,owe:0,on:false,created:'2026-09-25 10:02',by:'90556663'},
+ {id:1201,name:'俸禄金 测试',done:{cfg:1,rule:1,cnt:0},useLoss:true,useVip:false,months:3,vip:40,loss:100000,cons:1000,start:'2026-09-01',end:'2026-09-30',ds:'2026-09-01',de:'2026-09-30',budget:100000,exp:0,used:0,users:0,paid:0,adv:0,owe:0,on:false,created:'2026-08-30 18:11',by:'90556998'}
 ];
-const DEF={depRate:10,divisor:60,abWeeks:4,abVip:45,saWeeks:8,saVip:50,wager:1,
- rules:`1. On the 1st of each month, we calculate your qualified loss from the last 3 full months.
-2. Monthly Return = 3-Month Loss ÷ {返还除数}, paid as 4 Weekly Returns on the first 4 Fridays of the month.
+const GT=['slot', 'casino', 'arcade', 'poker', 'fishing', 'bingo'];
+const DEF={depRate:10,divisor:60,abWeeks:4,abVip:45,saWeeks:8,saVip:50,wg:{slot:1,casino:3,arcade:2,poker:5,fishing:2,bingo:3},
+ rules:`1. Each month, we share part of your play back to you as your Monthly Return.
+2. Your Monthly Return is paid as 4 Weekly Returns, on the 1st, 8th, 15th and 22nd of the month.
 3. Unclaimed returns stay for you (up to 4 weeks). A new one replaces the oldest when full.
 4. To claim or advance, deposit {充值比例}% of the amount. Deposits from any channel count.
-5. All rewards require {流水倍数}x wagering on the reward amount before withdrawal.
-6. Claim {AB期数} weeks (or reach VIP {AB等级}) to unlock Advance Bonus; claim {SA期数} weeks (or reach VIP {SA等级}) to unlock Super Advance. Unlocked features start next month.
-7. Advanced amounts must be repaid in full from your balance before you can claim or advance again. Once repaid, each advanced Weekly Return of this month can be claimed again right away, with no extra deposit.`};
+5. All rewards require wagering before withdrawal. The requirement depends on the game type: {游戏流水}.
+6. If several Weekly Returns are ready, one tap on Claim collects them all.
+7. Claim {AB期数} weeks (or reach VIP {AB等级}) to unlock Advance Bonus; claim {SA期数} weeks (or reach VIP {SA等级}) to unlock Super Advance. Unlocked features start next month.
+8. Advanced amounts must be repaid in full from your balance before you can claim or advance again. Deposits are not restricted. Once repaid, each advanced Weekly Return of this month can be claimed again right away, with no extra deposit.`};
+ACTS.forEach(a=>{for(const k in DEF)if(a[k]===undefined)a[k]=JSON.parse(JSON.stringify(DEF[k]));});
 let E=null,etab='cfg';
 const $=id=>document.getElementById(id);
 const fmt=n=>Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 function toast(t,er){const e=$('toast');e.textContent=t;e.className='toast '+(er?'er':'ok');e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2000);}
 function dlg(h){$('dlg').innerHTML=h;$('mask').style.display='flex';}function closeD(){$('mask').style.display='none';}
+
+/* ---------- 分页控件：Total / 每页条数 / 页码 / 跳转 ---------- */
+const PG={list:{p:1,s:10},rpt:{p:1,s:10},log:{p:1,s:10}};const PGR={list:()=>showList(),rpt:()=>tRpt(),log:()=>showLog()};
+function pgSlice(k,rows){const g=PG[k],pages=Math.max(1,Math.ceil(rows.length/g.s));if(g.p>pages)g.p=pages;return rows.slice((g.p-1)*g.s,g.p*g.s);}
+function pgGo(k,p){const g=PG[k];g.p=p;PGR[k]();}
+function pgSize(k,n){PG[k].s=n;PG[k].p=1;PGR[k]();}
+function pgDd(e,k){e.stopPropagation();const d=e.currentTarget.querySelector('.pgdd');const o=d.style.display==='block';document.querySelectorAll('.pgdd').forEach(x=>x.style.display='none');d.style.display=o?'none':'block';}
+document.addEventListener('click',()=>document.querySelectorAll('.pgdd').forEach(x=>x.style.display='none'));
+function pager(k,total){const g=PG[k],pages=Math.max(1,Math.ceil(total/g.s));
+ const nums=[];for(let i=1;i<=pages;i++){if(i===1||i===pages||Math.abs(i-g.p)<=2)nums.push(i);else if(nums[nums.length-1]!=='…')nums.push('…');}
+ return `<div class="pg"><span>Total ${total}</span>
+ <span class="pgsz" onclick="pgDd(event,'${k}')">${g.s}/page <i>⌄</i><span class="pgdd">${[10,20,30,40,50,100].map(n=>`<span class="${n===g.s?'on':''}" onclick="event.stopPropagation();pgSize('${k}',${n})">${n}/page</span>`).join('')}</span></span>
+ <span class="pgb ${g.p>1?'':'dis'}" onclick="${g.p>1?`pgGo('${k}',${g.p-1})`:''}">‹</span>${nums.map(i=>i==='…'?'<span class="pgb dis">…</span>':`<span class="pgb ${i===g.p?'on':''}" onclick="pgGo('${k}',${i})">${i}</span>`).join('')}<span class="pgb ${g.p<pages?'':'dis'}" onclick="${g.p<pages?`pgGo('${k}',${g.p+1})`:''}">›</span>
+ <span>Go to</span><input class="in pggo" value="${g.p}" onkeydown="if(event.key==='Enter'){const v=Math.min(${pages},Math.max(1,parseInt(this.value)||1));pgGo('${k}',v)}" onblur="const v=Math.min(${pages},Math.max(1,parseInt(this.value)||1));if(v!==PG['${k}'].p)pgGo('${k}',v)"></div>`;}
 /* ---------- LIST ---------- */
 const TYPE='俸禄金';
+function condTxt(a){const p=[];if(a.useLoss)p.push('近'+a.months+'个月亏损 ≥ ₱'+(+a.loss).toLocaleString());if(a.useVip)p.push('VIP ≥ '+a.vip);return p.join('<br>或 ');}
 function ratio(a){return a.budget>0?a.used/a.budget:0}
 function alertList(){return ACTS.filter(a=>a.on&&a.budget>0&&a.used>0&&ratio(a)>=.7&&!a.dismiss).sort((x,y)=>ratio(y)-ratio(x));}
-function dismiss(id){ACTS.find(x=>x.id===id).dismiss=true;refreshAl();if($('mask').style.display==='flex')alerts();}
+function dismiss(id){const _a=ACTS.find(x=>x.id===id);_a.dismiss=true;addLog('关闭俸禄金预算告警',[['活动',_a.name+'（'+_a.id+'）'],['消耗比例',Math.round(ratio(_a)*100)+'%']]);refreshAl();if($('mask').style.display==='flex')alerts();}
 function refreshAl(){const l=alertList();$('alc').textContent=l.length;const st=$('alstrip');
  if(!l.length){st.style.display='none';return;}
  st.style.display='flex';st.innerHTML=`<b>⚠ 预算消耗告警</b><span>以下活动消耗已达预算 70%：</span>${l.map(a=>`<span class="tg"><span class="ty">${TYPE}</span>${a.name}（${Math.round(ratio(a)*100)}%）<span class="x" onclick="dismiss(${a.id})">×</span></span>`).join('')}<span class="all" onclick="ACTS.forEach(a=>{if(alertList().includes(a))a.dismiss=true});refreshAl()">全部关闭</span>`;}
 function alerts(){const l=alertList();dlg(`<h4>预算告警</h4>${l.length?`<table class="t"><tr><th>活动类型</th><th>活动名称</th><th>预算</th><th>实际消耗</th><th>消耗比例</th><th>操作</th></tr>${l.map(a=>`<tr><td>${TYPE}</td><td>${a.name||''}</td><td>${a.budget.toLocaleString()}</td><td>${a.used.toLocaleString()}</td><td style="color:#f56c6c;font-weight:700">${Math.round(ratio(a)*100)}%</td><td><span class="lk" onclick="closeD();openEdit(${a.id},'rpt')">查看</span><span class="lk" onclick="dismiss(${a.id})">关闭</span></td></tr>`).join('')}</table>`:'<div class="sub">暂无告警</div>'}<div class="foot" style="justify-content:flex-end;border:none;margin-top:12px"><span class="btn pl" onclick="closeD()">关闭窗口</span></div>`);$('dlg').style.width='640px';}
-function showList(){E=null;setTimeout(refreshAl);
+function nav(k){$('miLsr').classList.toggle('on',k==='lsr');$('miLog').classList.toggle('on',k==='log');$('crumb').innerHTML=k==='log'?'位置<span>›</span>日志管理<span>›</span>操作日志':'位置<span>›</span>活动中心<span>›</span>俸禄金';const t=$('ptabs').children;t[2].className=k==='lsr'?'on':'';t[3].className=k==='log'?'on':'';}
+function showList(){E=null;nav('lsr');setTimeout(refreshAl);
  $('view').innerHTML=`<div class="notice"><b>★ 单活动运行：</b>同一时间只能开启一个俸禄金活动。开启新活动前，需先关闭当前进行中的活动。</div>
  <div class="page"><h3 class="sec">俸禄金活动列表<span class="btn" onclick="openEdit()">＋ 新建活动</span></h3>
- <table class="t"><tr><th>活动编号 / 名称</th><th>参与方式</th><th>活动时间</th><th>展示时间</th><th>预算</th><th>参与人数</th><th>预计发放金额</th><th>实际发放金额 / 预算占比</th><th>待还款</th><th>状态</th><th>创建时间</th><th>修改人</th><th>操作</th></tr>
- ${ACTS.map(a=>`<tr><td><b>${a.name}</b><div class="sub">${a.id}</div></td><td>${a.mode==='vipl'?'VIP ≥ '+a.vip+'<br>且 3个月亏损 ≥ ₱'+a.loss.toLocaleString():'3个月亏损 ≥ ₱'+a.loss.toLocaleString()}</td>
+ <table class="t"><tr><th>活动编号 / 名称</th><th>参与条件</th><th>活动时间</th><th>展示时间</th><th>预算</th><th>参与人数</th><th>预计发放金额</th><th>实际发放金额 / 预算占比</th><th>待还款</th><th>状态</th><th>创建时间</th><th>修改人</th><th>操作</th></tr>
+ ${pgSlice('list',ACTS).map(a=>`<tr><td><b>${a.name}</b><div class="sub">${a.id}</div></td><td>${condTxt(a)}</td>
  <td>${a.start.slice(5)} ~ ${a.end.slice(5)}</td><td>${(a.ds||a.start).slice(5)} ~ ${(a.de||a.end).slice(5)}</td><td>₱${a.budget.toLocaleString()}</td>
  <td>${a.users}</td><td>₱${fmt(a.exp||0)}</td><td>₱${fmt(a.used)}<br><span class="sub" style="${a.on&&a.used/a.budget>=.7?'color:#f56c6c;font-weight:700':''}">占预算 ${a.budget?Math.round(a.used/a.budget*100):0}%${a.on&&a.used/a.budget>=.7?' ⚠':''}${a.exp?' · 发放率 '+Math.round(a.used/a.exp*100)+'%':''}</span></td><td style="color:${a.owe?'#f56c6c':'#999'}">₱${fmt(a.owe)}</td>
  <td>${a.on?'<span class="st-run">进行中</span>':missing(a).length?'<span style="color:#e6a23c;font-weight:700">配置中</span><div class="sub">缺：'+missing(a).join('、')+'</div>':a.used?'<span class="st-off">已停用</span>':'<span class="st-wait">未开启</span>'}</td><td>${a.created}</td><td>${a.by}</td>
  <td><span class="lk" onclick="openEdit(${a.id},'rpt')">数据</span><span class="lk" onclick="openEdit(${a.id})">修改</span><span class="sw ${a.on?'on':''}" onclick="toggle(${a.id})"></span></td></tr>`).join('')}</table>
- <div class="pg">Total ${ACTS.length}　20/page　‹ <b style="color:#409eff">1</b> ›</div></div>`;}
+ ${pager('list',ACTS.length)}</div>`;}
 function toggle(id){const a=ACTS.find(x=>x.id===id);
  if(!a.on){const m=missing(a);if(m.length){toast('开启失败：请先完成「'+m.join('」「')+'」',1);return;}const run=ACTS.find(x=>x.on);if(run){toast(`开启失败：「${run.name}」正在进行中，请先关闭`,1);return;}
-  dlg(`<h4>开启活动</h4><div>确认开启「${a.name}」？开启后玩家端立即可见。</div><div class="foot" style="justify-content:flex-end;border:none;margin-top:16px"><span class="btn pl" onclick="closeD()">取消</span><span class="btn" onclick="const _a=ACTS.find(x=>x.id===${id});_a.on=true;_a.dismiss=false;closeD();showList();toast('活动已开启')">确定</span></div>`);}
- else dlg(`<h4>关闭活动</h4><div>确认关闭「${a.name}」？关闭后玩家端不可见；已生成未领取的奖励及待还款记录保留。</div><div class="foot" style="justify-content:flex-end;border:none;margin-top:16px"><span class="btn pl" onclick="closeD()">取消</span><span class="btn wn" onclick="ACTS.find(x=>x.id===${id}).on=false;closeD();showList();toast('活动已关闭')">确定关闭</span></div>`);}
+  dlg(`<h4>开启活动</h4><div>确认开启「${a.name}」？开启后玩家端立即可见。</div><div class="foot" style="justify-content:flex-end;border:none;margin-top:16px"><span class="btn pl" onclick="closeD()">取消</span><span class="btn" onclick="const _a=ACTS.find(x=>x.id===${id});_a.on=true;_a.dismiss=false;addLog('开启俸禄金活动',[['活动',_a.name+'（'+_a.id+'）'],['活动状态','未开启','进行中']]);closeD();showList();toast('活动已开启')">确定</span></div>`);}
+ else dlg(`<h4>关闭活动</h4><div>确认关闭「${a.name}」？关闭后玩家端不可见；已生成未领取的奖励及待还款记录保留。</div><div class="foot" style="justify-content:flex-end;border:none;margin-top:16px"><span class="btn pl" onclick="closeD()">取消</span><span class="btn wn" onclick="const _b=ACTS.find(x=>x.id===${id});_b.on=false;addLog('关闭俸禄金活动',[['活动',_b.name+'（'+_b.id+'）'],['活动状态','进行中','已停用']]);closeD();showList();toast('活动已关闭')">确定关闭</span></div>`);}
 /* ---------- EDIT ---------- */
-function openEdit(id,tab){const a=id?ACTS.find(x=>x.id===id):null;
- E=Object.assign({id:null,name:'',mode:'loss',vip:40,loss:50000,start:'',end:'',ds:'',de:'',budget:'',on:false,types:[],banner:false,done:{}},JSON.parse(JSON.stringify(DEF)),a?{banner:true}:{rules:''},a?JSON.parse(JSON.stringify(a)):{});
- etab=tab||'cfg';RP=1;renderEdit();}
+function openEdit(id,tab){nav('lsr');const a=id?ACTS.find(x=>x.id===id):null;
+ E=Object.assign({id:null,name:'',useLoss:true,useVip:false,months:3,vip:40,loss:50000,cons:'',start:'',end:'',ds:'',de:'',budget:'',on:false,banner:false,done:{}},JSON.parse(JSON.stringify(DEF)),a?{banner:true}:{rules:''},a?JSON.parse(JSON.stringify(a)):{});
+ etab=tab||'cfg';PG.rpt.p=1;renderEdit();}
 function tabOk(k){return E.id||k==='cfg';}
 function renderEdit(){const t=[['cfg','活动配置'],['rule','奖励规则'],['cnt','内容配置']];if(E.id)t.push(['rpt','数据报表']);
  const mk=k=>k==='rpt'?'':(E.done&&E.done[k]?'<span style="color:#13ce66;margin-left:3px">✓</span>':(E.id?'<span style="color:#f08c14;margin-left:3px">●</span>':''));
@@ -172,47 +196,58 @@ function tCfg(){$('ebody').innerHTML=`
  <div class="box"><h3 class="sec">基础信息</h3>
   <div class="row"><div class="lb"><i>*</i>活动名称</div><input class="in" id="f_name" style="width:360px" maxlength="50" placeholder="请输入活动名称" ${v('name')}><span class="hint">仅后台展示，用于区分各期活动；玩家端活动名称固定为「Loyalty Share Rewards」</span></div>
   <div class="row"><div class="lb">活动状态</div>${!E.id?`<span class="sw" style="opacity:.5;cursor:not-allowed"></span><span class="hint">已关闭 · 新建时默认关闭，三项配置完成后可在活动列表开启</span>`:`<span class="sw ${E.on?'on':''}" onclick="if(!E.on){const m=missing(E);if(m.length){toast('无法开启：请先完成「'+m.join('」「')+'」',1);return;}}E.on=!E.on;this.classList.toggle('on');this.nextElementSibling.textContent=E.on?'已开启 · 玩家端可见':'已关闭 · 玩家端不可见'"></span><span class="hint">${E.on?'已开启 · 玩家端可见':'已关闭 · 玩家端不可见'}</span>`}</div>
-  <div class="row"><div class="lb">活动类型</div><span class="rad">${['Acquisition','Retention','Secuna Test'].map(x=>`<label><input type="checkbox" ${E.types.includes(x)?'checked':''} onchange="this.checked?E.types.push('${x}'):E.types=E.types.filter(y=>y!=='${x}')">${x}</label>`).join('')}</span><span class="hint">选项来自「活动配置 › 活动类别管理」</span></div></div>
+</div></div>
  <div class="box"><h3 class="sec">时间配置</h3>
   <div class="row"><div class="lb"><i>*</i>活动时间</div><input class="in" type="date" id="f_start" style="width:160px" ${v('start')}> ~ <input class="in" type="date" id="f_end" style="width:160px" ${v('end')}></div>
   <div class="row"><div class="lb">展示时间</div><input class="in" type="date" style="width:160px" ${v('ds')}> ~ <input class="in" type="date" style="width:160px" ${v('de')}><span class="hint">未配置时与活动时间一致</span></div></div>
  <div class="box"><h3 class="sec">参与条件</h3>
-  <div class="row"><div class="lb"><i>*</i>参与方式</div><span class="rad"><label><input type="radio" name="md" ${E.mode==='loss'?'checked':''} onchange="E.mode='loss';tCfg()">按近 3 个月亏损金额</label><label><input type="radio" name="md" ${E.mode==='vipl'?'checked':''} onchange="E.mode='vipl';tCfg()">按 VIP 等级 + 近 3 个月亏损金额</label></span><span class="hint">二选一；选第二种时，两个条件需同时满足</span></div>
-  <div class="cond">${E.mode==='vipl'?`<div class="row"><div class="lb" style="width:130px"><i>*</i>VIP 最低等级</div><span class="vipin"><span class="vp">VIP</span><input class="in " inputmode="numeric" maxlength="3" value="${E.vip}" oninput="this.value=this.value.replace(/[^0-9]/g,'');E.vip=this.value===''?'':+this.value"></span><span class="u">及以上</span></div>`:''}
-  <div class="row"><div class="lb" style="width:130px"><i>*</i>最低亏损金额</div><input class="in" type="number" id="f_loss" ${v('loss')}><span class="u">₱ · 近 3 个完整自然月符合条件亏损 ≥ 该金额${E.mode==='vipl'?'（与 VIP 等级同时满足）':''}可参与</span></div></div>
-  <div class="row"><div class="lb">名单微调</div><span class="hint">白名单强制纳入（忽略参与门槛）；黑名单强制排除。仅支持 .csv / .txt</span></div>
-  ${['白名单','黑名单'].map((x,k)=>`<div class="row"><div class="lb"></div><span class="ev ${k?'r':'c'}" style="padding:3px 10px">${x}</span><input class="in" style="width:280px" placeholder="userID（逗号 / 分号 / 换行分隔）"><span class="btn ${k?'wn':''}" onclick="E.${k?'bl':'wl'}=(E.${k?'bl':'wl'}||0)+3;tCfg();toast('导入成功 3 人')">批量导入</span><span class="btn pl" onclick="toast('模板已下载')">下载模板</span><span class="btn pl" onclick="toast('名单共 '+(E.${k?'bl':'wl'}||0)+' 人')">查看名单</span><span class="hint">已导入 ${E[k?'bl':'wl']||0} 人</span></div>`).join('')}
+  <div class="row"><div class="lb"><i>*</i>统计周期</div><span class="u">近</span><input class="in s" style="width:70px" inputmode="numeric" id="f_months" value="${E.months}" oninput="this.value=this.value.replace(/[^0-9]/g,'');E.months=this.value===''?'':+this.value" onchange="tCfg()"><span class="u">个完整自然月（单位：月）</span><span class="hint">每月 1 号按此周期统计亏损，用于判定参与资格和计算当月返还</span></div>
+  <div class="row"><div class="lb"><i>*</i>参与条件</div><span class="hint">至少勾选一项；同时勾选时，<b style="color:#409eff">满足其一即可参与</b></span></div>
+  <div class="cond">
+   <div class="row"><label class="rad" style="width:140px;text-align:right;justify-content:flex-end;display:flex"><input type="checkbox" ${E.useLoss?'checked':''} onchange="E.useLoss=this.checked;tCfg()">亏损金额</label><span class="u">近 ${E.months||'N'} 个月符合条件亏损 ≥</span><input class="in s" type="number" id="f_loss" ${v('loss')} ${E.useLoss?'':'disabled style="opacity:.5"'}><span class="u">₱</span></div>
+   <div class="row"><label class="rad" style="width:140px;text-align:right;justify-content:flex-end;display:flex"><input type="checkbox" ${E.useVip?'checked':''} onchange="E.useVip=this.checked;tCfg()">VIP 等级</label><span class="u">VIP 等级 ≥</span><span class="vipin"><span class="vp">VIP</span><input class="in s" inputmode="numeric" maxlength="3" value="${E.vip}" ${E.useVip?'':'disabled style="opacity:.5"'} oninput="this.value=this.value.replace(/[^0-9]/g,'');E.vip=this.value===''?'':+this.value"></span></div></div>
+  <div class="row"><div class="lb">展示规则</div><span class="u" style="flex:1;min-width:0">满足参与条件、且计算出的当月返还 ≥ ₱4（每期 ≥ ₱1）的用户，可看到活动入口（Banner、挂件）并激活活动；其余用户完全看不到活动入口。<br>已激活的用户永久可见：之后某月不再满足条件（或当月返还 &lt; ₱4）时，改为领取安慰奖（见「奖励规则 › 安慰奖」）。</span></div>
+  <div class="row"><div class="lb">名单微调</div><span class="hint">白名单最高权限：强制纳入，不受参与条件和 ₱4 限制（当月返还 < ₱4 时按安慰奖兜底）；黑名单强制排除。仅支持 .csv / .txt</span></div>
+  ${['白名单','黑名单'].map((x,k)=>`<div class="row"><div class="lb"></div><span class="ev ${k?'r':'c'}" style="padding:3px 10px">${x}</span><input class="in" style="width:280px" placeholder="userID（逗号 / 分号 / 换行分隔）"><span class="btn ${k?'wn':''}" onclick="E.${k?'bl':'wl'}=(E.${k?'bl':'wl'}||0)+3;addLog('导入俸禄金${k?'黑名单':'白名单'}',[['活动',(E.name||'新建活动')+(E.id?'（'+E.id+'）':'')],['导入人数','3'],['名单总人数',String(E.${k?'bl':'wl'})]]);tCfg();toast('导入成功 3 人')">批量导入</span><span class="btn pl" onclick="toast('模板已下载')">下载模板</span><span class="btn pl" onclick="toast('名单共 '+(E.${k?'bl':'wl'}||0)+' 人')">查看名单</span><span class="hint">已导入 ${E[k?'bl':'wl']||0} 人</span></div>`).join('')}
  </div>
  <div class="box"><h3 class="sec">预算</h3>
   <div class="row"><div class="lb"><i>*</i>活动总预算</div><input class="in" type="number" id="f_budget" ${v('budget')}><span class="u">₱</span><span class="hint">已用金额 = 实际发放金额 = 领取 + 预支 − 还款</span></div></div>
  ${footer()}`;}
 function tRule(){$('ebody').innerHTML=`
  <div class="box"><h3 class="sec">返还配置</h3>
-  <div class="row"><div class="lb">结算周期</div><input class="in ro" readonly value="每月 1 号 · 近 3 个完整自然月滚动"></div>
-  <div class="row"><div class="lb"><i>*</i>返还除数</div><input class="in s" type="number" value="${E.divisor??''}" oninput="E.divisor=this.value;calc()"><span class="u">当月返还 = 3 个月亏损 ÷ 除数</span></div>
-  <div class="row"><div class="lb">发放期数</div><input class="in ro" readonly value="固定 4 期" style="width:160px"><span class="u">每月前 4 个周五各生成 1 期；最多累计 4 期，超出时最新一期覆盖最早一期</span></div>
+  <div class="row"><div class="lb">结算周期</div><input class="in ro" readonly value="每月 1 号 · 近 ${E.months} 个完整自然月滚动"><span class="hint">统计月数在「活动配置 › 参与条件」设置</span></div>
+  <div class="row"><div class="lb"><i>*</i>返还除数</div><input class="in s" type="number" value="${E.divisor??''}" oninput="E.divisor=this.value;calc()"><span class="u">当月返还 = 近 ${E.months} 个月亏损 ÷ 除数；当月返还 &lt; ₱4 时不展示活动（已激活用户改发安慰奖）</span></div>
+  <div class="row"><div class="lb">发放期数</div><input class="in ro" readonly value="固定 4 期" style="width:160px"><span class="u">每月 1、8、15、22 号各生成 1 期；最多累计 4 期，超出时最新一期覆盖最早一期</span></div>
   <div class="row"><div class="lb"><i>*</i>领奖充值比例</div><input class="in s" type="number" value="${E.depRate??''}" oninput="E.depRate=this.value;calc()"><span class="u">%，领取与预支均需满足充值要求 = 本次金额 × 比例（任意入口充值到账均可计入）</span></div>
   <div class="cond" id="calc"></div></div>
+ <div class="box"><h3 class="sec">安慰奖</h3>
+  <div class="row"><div class="lb"><i>*</i>安慰奖金额</div><input class="in s" type="number" id="f_cons" value="${E.cons??''}" oninput="E.cons=this.value;calc()"><span class="u">₱ / 月 · 均分 4 期（每期 ₱${fmt((+E.cons||0)/4)}）</span></div>
+  <div class="row"><div class="lb">发放对象</div><span class="u">已激活过本活动、但本月不满足参与条件（或当月返还 &lt; ₱4）的用户；白名单用户当月返还 &lt; ₱4 时也发放安慰奖（兜底）</span></div>
+  <div class="row"><div class="lb">领取规则</div><span class="u">与正常奖励完全一致：同样 4 期、领奖日、充值比例、Advance / 还款、流水要求；只是金额不同</span></div></div>
  <div class="box"><h3 class="sec">预支配置</h3>
   <table class="t" style="width:760px"><tr><th>功能</th><th>解锁：历史累计领取期数 ≥</th><th>或 VIP 等级 ≥</th><th>可预支范围</th><th>可用时间</th></tr>
   <tr><td><b>Advance Bonus</b></td><td><input class="in s" type="number" ${v('abWeeks')}></td><td><span class="vipin"><span class="vp">VIP</span><input class="in s" inputmode="numeric" maxlength="3" value="${E.abVip}" oninput="this.value=this.value.replace(/[^0-9]/g,'');E.abVip=this.value===''?'':+this.value"></span></td><td>下一期</td><td>解锁后下个月</td></tr>
   <tr><td><b>Super Advance</b></td><td><input class="in s" type="number" ${v('saWeeks')}></td><td><span class="vipin"><span class="vp">VIP</span><input class="in s" inputmode="numeric" maxlength="3" value="${E.saVip}" oninput="this.value=this.value.replace(/[^0-9]/g,'');E.saVip=this.value===''?'':+this.value"></span></td><td>本月剩余全部期数</td><td>解锁后下个月</td></tr></table>
   <div class="row"><div class="lb">还款方式</div><input class="in ro" readonly value="从可用余额全额扣除（不支持部分还款）" style="width:300px"></div>
-  <div class="row"><div class="lb">还款后</div><span class="u">还款成功后，被预支的期数立即恢复为可领取（Claim），由用户手动领取，不论原定周五是否已到；预支时已满足充值要求，无需再充值。仅限当月：被新月份数据覆盖后不再恢复</span></div></div>
+  <div class="row"><div class="lb">还款后</div><span class="u" style="flex:1;min-width:0">还款成功后，被预支的期数立即恢复为可领取（Claim），由用户手动领取，不论原定领奖日是否已到；预支时已满足充值要求，无需再充值。仅限当月：被新月份数据覆盖后不再恢复</span></div></div>
  <div class="box"><h3 class="sec">流水配置</h3>
-  <div class="row"><div class="lb"><i>*</i>流水倍数</div><input class="in s" type="number" value="${E.wager??''}" oninput="E.wager=this.value;calc()"><span class="u">倍 · 流水要求 = 奖励金额 × 倍数</span></div>
-  <div class="row"><div class="lb">适用于</div><span class="u">Weekly Return · 累计领取 · Advance Bonus · Super Advance</span></div></div>
+  <div class="row" style="align-items:flex-start"><div class="lb"><i>*</i>按游戏类型</div>
+  <table class="t" style="width:560px"><tr><th>游戏类型</th><th>计入流水</th><th>流水倍数</th><th>每期流水要求（试算）</th></tr>
+  ${GT.map(g=>`<tr><td><b>${g}</b></td><td><input type="checkbox" ${E.wg[g]>0?'checked':''} onchange="E.wg['${g}']=this.checked?1:0;tRule()"></td><td>${E.wg[g]>0?`<input class="in s" style="width:80px" type="number" value="${E.wg[g]}" oninput="E.wg['${g}']=+this.value;calc()"> 倍`:'<span class="sub">不计入</span>'}</td><td id="wgc_${g}">—</td></tr>`).join('')}</table></div>
+  <div class="row"><div class="lb">计算方式</div><span class="u" style="flex:1;min-width:0">某游戏类型的流水要求 = 奖励金额 × 该类型倍数。玩家可在多个类型中投注，完成度 = Σ（该类型有效投注 ÷ 该类型流水要求），达到 100% 即完成；未勾选的类型投注不计入</span></div>
+  <div class="row"><div class="lb">适用于</div><span class="u">正常奖励与安慰奖 · Claim · Advance Bonus · Super Advance</span></div></div>
  ${footer()}`;calc();}
-function calc(){const el=$('calc');if(!el)return;const L=600000,m=L/(+E.divisor||1),w=m/4,d=w*(+E.depRate||0)/100,wg=w*(+E.wager||0);
- el.innerHTML=`<div class="row" style="margin:4px 0"><b class="u">试算</b><span class="u">3 个月亏损 ₱600,000 → 当月返还 <b>₱${fmt(m)}</b> → 每期 <b>₱${fmt(w)}</b> → 每期充值要求 <b>₱${fmt(d)}</b> → 每期流水要求 <b>₱${fmt(wg)}</b></span></div>`;}
-function rulesText(){return E.rules.replace(/\{divisor\}/g,E.divisor).replace(/\{deposit_ratio\}/g,E.depRate).replace(/\{wagering\}/g,E.wager).replace(/\{ab_periods\}/g,E.abWeeks).replace(/\{ab_vip\}/g,E.abVip).replace(/\{sa_periods\}/g,E.saWeeks).replace(/\{sa_vip\}/g,E.saVip).replace(/\{返还除数\}/g,E.divisor).replace(/\{充值比例\}/g,E.depRate).replace(/\{流水倍数\}/g,E.wager).replace(/\{AB期数\}/g,E.abWeeks).replace(/\{AB等级\}/g,E.abVip).replace(/\{SA期数\}/g,E.saWeeks).replace(/\{SA等级\}/g,E.saVip);}
+function calc(){const el=$('calc');if(!el)return;const L=600000,m=L/(+E.divisor||1),w=m/4,d=w*(+E.depRate||0)/100;GT.forEach(g=>{const c=$('wgc_'+g);if(c)c.textContent=E.wg[g]>0?'₱'+fmt(w*E.wg[g]):'—';});
+ el.innerHTML=`<div class="row" style="margin:4px 0"><b class="u">试算</b><span class="u">近 ${E.months} 个月亏损 ₱600,000 → 当月返还 <b>₱${fmt(m)}</b> → 每期 <b>₱${fmt(w)}</b> → 每期充值要求 <b>₱${fmt(d)}</b>（流水要求见下方「流水配置」）</span></div>`;}
+function wgTxt(){return GT.filter(g=>E.wg[g]>0).map(g=>g+' '+E.wg[g]+'x').join(', ');}
+function rulesText(){return E.rules.replace(/\{divisor\}/g,E.divisor).replace(/\{deposit_ratio\}/g,E.depRate).replace(/\{game_wagering\}/g,wgTxt()).replace(/\{ab_periods\}/g,E.abWeeks).replace(/\{ab_vip\}/g,E.abVip).replace(/\{sa_periods\}/g,E.saWeeks).replace(/\{sa_vip\}/g,E.saVip).replace(/\{返还除数\}/g,E.divisor).replace(/\{充值比例\}/g,E.depRate).replace(/\{游戏流水\}/g,wgTxt()).replace(/\{AB期数\}/g,E.abWeeks).replace(/\{AB等级\}/g,E.abVip).replace(/\{SA期数\}/g,E.saWeeks).replace(/\{SA等级\}/g,E.saVip);}
 function tCnt(){$('ebody').innerHTML=`
  <div class="box"><h3 class="sec">图片设置</h3>
   <div class="row"><div class="lb"><i>*</i>活动页顶部横幅</div><div class="up"><span class="btn" onclick="E.banner=true;tCnt();toast('上传成功')">选择文件</span><div class="thumb" style="${E.banner?'background:linear-gradient(120deg,#ff7eb3,#9b6bff);color:#fff;font-weight:700':''}">${E.banner?'YOUR SHARE. YOUR REWARDS.':'未上传'}</div><span class="hint">仅支持 .PNG .JPG，不超过 2MB，建议 750×360</span></div></div>
   <div class="row"><div class="lb">活动页底部图</div><div class="up"><span class="btn pl" onclick="toast('上传成功')">选择文件</span><div class="thumb">未上传</div><span class="hint">选填</span></div></div></div>
  <div class="box"><h3 class="sec">Rules 文案</h3>
   <div class="row" style="align-items:flex-start"><div class="lb"><i>*</i>规则内容</div>
-   <div class="ed"><div class="tb">插入变量：${['返还除数','充值比例','流水倍数','AB期数','AB等级','SA期数','SA等级'].map(x=>`<span onclick="ins('{${x}}')">{${x}}</span>`).join('')}</div>
+   <div class="ed"><div class="tb">插入变量：${['返还除数','充值比例','游戏流水','AB期数','AB等级','SA期数','SA等级'].map(x=>`<span onclick="ins('{${x}}')">{${x}}</span>`).join('')}</div>
    <textarea class="rt" id="rt" placeholder="请输入玩家端 Rules 文案，可插入上方变量" oninput="E.rules=this.value;$('pvb').textContent=rulesText()">${E.rules}</textarea></div>
    <div class="pv"><div class="h">Activity description</div><div class="b" id="pvb"></div></div></div>
   <div class="row"><div class="lb"></div><span class="hint">变量在玩家端自动替换为「奖励规则」中的当前数值；右侧为玩家端预览</span></div></div>
@@ -220,15 +255,15 @@ function tCnt(){$('ebody').innerHTML=`
 function ins(t){const a=$('rt'),s=a.selectionStart;a.value=a.value.slice(0,s)+t+a.value.slice(a.selectionEnd);E.rules=a.value;a.focus();a.selectionStart=a.selectionEnd=s+t.length;$('pvb').textContent=rulesText();}
 function missing(o){const n={cfg:'活动配置',rule:'奖励规则',cnt:'内容配置'};return ['cfg','rule','cnt'].filter(k=>!(o.done&&o.done[k])).map(k=>n[k]);}
 function save(){
- if(etab==='cfg'){const miss=[];if(!E.name)miss.push('活动名称');if(!E.start||!E.end)miss.push('活动时间');if(!E.budget)miss.push('活动总预算');if(!E.loss)miss.push('最低亏损金额');if(E.mode==='vipl'&&E.vip==='')miss.push('VIP 最低等级');
-  if(miss.length){toast('请填写：'+miss.join('、'),1);miss.forEach(m=>{const id={活动名称:'f_name',活动时间:'f_start',活动总预算:'f_budget',最低亏损金额:'f_loss'}[m];id&&$(id)&&$(id).classList.add('err');});return;}}
- if(etab==='rule'){if(['divisor','depRate','wager','abWeeks','saWeeks'].some(k=>!(+E[k]>0))){toast('奖励规则中的数值需大于 0',1);return;}if(E.abVip===''||E.saVip===''){toast('请填写预支解锁的 VIP 等级',1);return;}}
+ if(etab==='cfg'){const miss=[];if(!E.name)miss.push('活动名称');if(!E.start||!E.end)miss.push('活动时间');if(!E.budget)miss.push('活动总预算');if(!(E.months>0))miss.push('统计周期');if(!E.useLoss&&!E.useVip)miss.push('参与条件（至少一项）');if(E.useLoss&&!E.loss)miss.push('亏损金额');if(E.useVip&&E.vip==='')miss.push('VIP 等级');
+  if(miss.length){toast('请填写：'+miss.join('、'),1);miss.forEach(m=>{const id={活动名称:'f_name',活动时间:'f_start',活动总预算:'f_budget',亏损金额:'f_loss',统计周期:'f_months'}[m];id&&$(id)&&$(id).classList.add('err');});return;}}
+ if(etab==='rule'){if(['divisor','depRate','abWeeks','saWeeks','cons'].some(k=>!(+E[k]>0))){toast('奖励规则中的数值需大于 0',1);return;}if(!GT.some(g=>E.wg[g]>0)){toast('至少选择一个计入流水的游戏类型',1);return;}if(E.abVip===''||E.saVip===''){toast('请填写预支解锁的 VIP 等级',1);return;}}
  if(etab==='cnt'){const m=[];if(!E.banner)m.push('活动页顶部横幅');if(!E.rules||!E.rules.trim())m.push('规则内容');if(m.length){toast('请填写：'+m.join('、'),1);return;}}
  if(E.on){const run=ACTS.find(x=>x.on&&x.id!==E.id);if(run){toast(`保存失败：「${run.name}」正在进行中，同一时间只能开启一个活动`,1);return;}}
  E.done=Object.assign({},E.done,{[etab]:1});E.budget=+E.budget;
- const isNew=!E.id;
- if(!isNew){const o=ACTS.find(x=>x.id===E.id);if(+o.budget!==E.budget)E.dismiss=false;Object.assign(o,JSON.parse(JSON.stringify(E)));}
- else{E.id=Math.max(...ACTS.map(x=>x.id))+1;Object.assign(E,{used:0,users:0,paid:0,adv:0,owe:0,created:'2026-11-14 11:50',by:'cs_kei'});if(!E.rules)E.rules=DEF.rules;ACTS.unshift(JSON.parse(JSON.stringify(E)));}
+ const isNew=!E.id;const TABN={cfg:'活动配置',rule:'奖励规则',cnt:'内容配置'};
+ if(!isNew){const o=ACTS.find(x=>x.id===E.id);const ch=diff(o,E,etab);addLog('修改俸禄金'+TABN[etab],[['活动',E.name+'（'+E.id+'）']].concat(ch.length?ch:[['变更','无字段变化（仅保存）']]));if(+o.budget!==E.budget)E.dismiss=false;Object.assign(o,JSON.parse(JSON.stringify(E)));}
+ else{E.id=Math.max(...ACTS.map(x=>x.id))+1;Object.assign(E,{used:0,users:0,paid:0,adv:0,owe:0,created:'2026-11-14 11:50',by:'cs_kei'});if(!E.rules)E.rules=DEF.rules;ACTS.unshift(JSON.parse(JSON.stringify(E)));addLog('新增俸禄金活动',[['活动',E.name+'（'+E.id+'）'],['活动时间',E.start+' ~ '+E.end],['参与条件',condTxt(E).replace('<br>',' ')],['活动总预算','₱'+fmt(E.budget)]]);}
  const order=['cfg','rule','cnt'],nx=order.find(k=>!E.done[k]);
  if(nx){toast(isNew?'活动已创建，请继续配置「奖励规则」':'保存成功');etab=nx;renderEdit();}
  else{toast('配置已完成，可在活动列表开启活动');renderEdit();}
@@ -237,11 +272,12 @@ function save(){
 const NAMES=['Playerd43xe6666','Playervf84w7777','Playersadxs4085','Playerrtdpa5214','Player2nxnp4444','Playervmy868137','Playerep16e5214','Playerwbcj22578','Playersauhc0024'];
 const RPT=(()=>{const r=[];let k=0;const ev=['领取','领取','预支','领取','还款','领取','预支','领取','还款','领取','领取','预支','领取','领取'];
  for(let i=0;i<57;i++){const n=NAMES[i%NAMES.length],e=ev[i%ev.length],wk=1+(i%2),amt=e==='预支'&&i%4===2?5000:2500;
-  r.push({t:`2026-11-${String(13-Math.floor(i/5)).padStart(2,'0')} ${String(23-i%12).padStart(2,'0')}:${String(10+i*7%50).padStart(2,'0')}`,u:n,vip:40+(i%NAMES.length),mon:'2026-11',loss:600000-i*12000,ret:(600000-i*12000)/60,wk:e==='还款'?'—':e==='预支'?(amt>2500?'Week 3, 4':'Week 3'):'Week '+wk,ev:e,amt:e==='还款'?amt:amt,dep:e==='还款'?0:amt*.1,wreq:e==='还款'?0:amt,wdone:e==='还款'?0:Math.min(amt,(i*913)%(amt*1.1)),});}return r;})();
-let RF={u:'',ev:'全部',from:'2026-11-01',to:'2026-11-14'},RP=1;const RPS=20;
+  const cs=i%7===5;r.push({cons:cs,t:`2026-11-${String(13-Math.floor(i/5)).padStart(2,'0')} ${String(23-i%12).padStart(2,'0')}:${String(10+i*7%50).padStart(2,'0')}`,u:n,vip:40+(i%NAMES.length),mon:'2026-11',loss:600000-i*12000,ret:(600000-i*12000)/60,wk:e==='还款'?'—':e==='预支'?(amt>2500?'Week 3, 4':'Week 3'):'Week '+wk,ev:e,amt:e==='还款'?amt:amt,dep:e==='还款'?0:amt*.1,wreq:e==='还款'?0:amt,wdone:e==='还款'?0:Math.min(amt,(i*913)%(amt*1.1)),});}
+ r.forEach(x=>{if(x.cons){x.ret=2000;if(x.ev!=='还款'){x.amt=500;x.dep=50;x.wreq=500;x.wdone=Math.min(500,x.wdone);}else x.amt=1000;}});return r;})();
+let RF={u:'',ev:'全部',from:'2026-11-01',to:'2026-11-14'};
 function tRpt(){const act=E.id&&ACTS.find(x=>x.id===E.id);const src=(act&&act.users)?RPT:[];const rows=src.filter(r=>(!RF.u||r.u.toLowerCase().includes(RF.u.toLowerCase()))&&(RF.ev==='全部'||r.ev===RF.ev)&&r.t.slice(0,10)>=RF.from&&r.t.slice(0,10)<=RF.to);
  const s=k=>rows.filter(r=>r.ev===k).reduce((a,b)=>a+b.amt,0),users=new Set(rows.map(r=>r.u)).size,cl=s('领取'),ad=s('预支'),rp=s('还款'),act2=cl+ad-rp,exp=act?(act.exp||0):0;
- const pages=Math.max(1,Math.ceil(rows.length/RPS));if(RP>pages)RP=pages;const pr=rows.slice((RP-1)*RPS,RP*RPS);
+ const pr=pgSlice('rpt',rows);
  $('ebody').innerHTML=`<div class="cards">
  <div class="cd"><div class="k">参与人数</div><div class="v">${users}</div></div>
  <div class="cd"><div class="k">预算金额</div><div class="v">₱${fmt(act?act.budget:0)}</div><div class="sub">实际发放占预算 ${act&&act.budget?(act2/act.budget*100).toFixed(1):0}%</div></div>
@@ -254,12 +290,53 @@ function tRpt(){const act=E.id&&ACTS.find(x=>x.id===E.id);const src=(act&&act.us
  <div class="flt"><span>会员账号：</span><input class="in" style="width:170px" placeholder="请输入账号" value="${RF.u}" oninput="RF.u=this.value">
   <span>事件：</span><select class="in" style="width:110px" onchange="RF.ev=this.value">${['全部','领取','预支','还款'].map(x=>`<option ${x===RF.ev?'selected':''}>${x}</option>`).join('')}</select>
   <span>时间：</span><input class="in" type="date" style="width:150px" value="${RF.from}" onchange="RF.from=this.value"> ~ <input class="in" type="date" style="width:150px" value="${RF.to}" onchange="RF.to=this.value">
-  <span class="btn" onclick="RP=1;tRpt()">🔍 搜索</span><span class="btn pl" onclick="RF={u:'',ev:'全部',from:'2026-11-01',to:'2026-11-14'};RP=1;tRpt()">重置</span><span class="btn" style="margin-left:auto" onclick="toast('导出任务已创建')">导出</span></div>
- <table class="t"><tr><th>时间</th><th>会员账号</th><th>VIP</th><th>结算月</th><th>3个月亏损</th><th>当月返还</th><th>期数</th><th>事件</th><th>金额</th><th>充值金额</th><th>流水要求</th><th>流水完成</th></tr>
- ${pr.length?pr.map(r=>`<tr><td>${r.t}</td><td>${r.u}</td><td>VIP ${r.vip}</td><td>${r.mon}</td><td>₱${fmt(r.loss)}</td><td>₱${fmt(r.ret)}</td><td>${r.wk}</td>
- <td><span class="ev ${r.ev==='领取'?'c':r.ev==='预支'?'a':'r'}">${r.ev}</span></td><td>₱${fmt(r.amt)}</td><td>${r.dep?'₱'+fmt(r.dep):'—'}</td><td>${r.wreq?'₱'+fmt(r.wreq):'—'}</td>
- <td>${r.wreq?(r.wdone>=r.wreq?'<span style="color:#13a356;font-weight:600">已完成</span>':'₱'+fmt(r.wdone)):'—'}</td></tr>`).join(''):'<tr><td colspan="12" style="color:#999;padding:30px">No Data</td></tr>'}</table>
- <div class="pg">Total ${rows.length}　${RPS}/page　<span class="pgb ${RP>1?'':'dis'}" onclick="if(RP>1){RP--;tRpt()}">‹</span>${Array.from({length:pages},(_,k)=>`<span class="pgb ${k+1===RP?'on':''}" onclick="RP=${k+1};tRpt()">${k+1}</span>`).join('')}<span class="pgb ${RP<pages?'':'dis'}" onclick="if(RP<${pages}){RP++;tRpt()}">›</span></div>`;}
+  <span class="btn" onclick="PG.rpt.p=1;tRpt()">🔍 搜索</span><span class="btn pl" onclick="RF={u:'',ev:'全部',from:'2026-11-01',to:'2026-11-14'};PG.rpt.p=1;tRpt()">重置</span><span class="btn" style="margin-left:auto" onclick="addLog('导出俸禄金数据报表',[['活动',E.name+'（'+E.id+'）'],['筛选',RF.from+' ~ '+RF.to+(RF.u?' · '+RF.u:'')+' · '+RF.ev]]);toast('导出任务已创建')">导出</span></div>
+ <table class="t"><tr><th>时间</th><th>会员账号</th><th>VIP</th><th>结算月</th><th>奖励类型</th><th>统计期亏损</th><th>当月返还</th><th>期数</th><th>事件</th><th>金额</th><th>充值金额</th></tr>
+ ${pr.length?pr.map(r=>`<tr><td>${r.t}</td><td>${r.u}</td><td>VIP ${r.vip}</td><td>${r.mon}</td><td>${r.cons?'<span class="ev a">安慰奖</span>':'正常'}</td><td>₱${fmt(r.loss)}</td><td>₱${fmt(r.ret)}</td><td>${r.wk}</td>
+ <td><span class="ev ${r.ev==='领取'?'c':r.ev==='预支'?'a':'r'}">${r.ev}</span></td><td>₱${fmt(r.amt)}</td><td>${r.dep?'₱'+fmt(r.dep):'—'}</td></tr>`).join(''):'<tr><td colspan="12" style="color:#999;padding:30px">No Data</td></tr>'}</table>
+ ${pager('rpt',rows.length)}`;}
+
+/* ---------- 日志管理 › 操作日志 ---------- */
+const FL={cfg:[['name','活动名称'],['start','活动开始'],['end','活动结束'],['ds','展示开始'],['de','展示结束'],['months','统计周期（月）'],['useLoss','条件：亏损金额'],['loss','亏损金额 ≥'],['useVip','条件：VIP 等级'],['vip','VIP 等级 ≥'],['budget','活动总预算']],
+ rule:[['divisor','返还除数'],['depRate','领奖充值比例 %'],['cons','安慰奖金额 / 月'],['abWeeks','AB 解锁期数'],['abVip','AB 解锁 VIP'],['saWeeks','SA 解锁期数'],['saVip','SA 解锁 VIP'],['wg','流水倍数（按游戏类型）']],
+ cnt:[['banner','顶部横幅'],['rules','Rules 文案']]};
+const fv2=v=>typeof v==='boolean'?(v?'勾选':'未勾选'):typeof v==='object'&&v?GT.map(g=>g+' '+(v[g]>0?v[g]+'x':'不计入')).join(', '):String(v??'');
+function diff(o,n,tab){return FL[tab].filter(([k])=>JSON.stringify(o[k]??'')!==JSON.stringify(n[k]??'')).map(([k,l])=>[l,k==='rules'?'（原文案）':fv2(o[k]),k==='rules'?'（新文案）':fv2(n[k])]);}
+const OPS={cs_kei:'992108071',op_sandy:'992108039',ac_francis:'992108057',sa_fast:'992108046'};
+let LOGS=[
+ ['op_sandy','短信','2026-11-14 11:42:09','短信记录跟踪',[['内容','查看短信记录']]],
+ ['cs_kei','俸禄金','2026-11-14 11:35:20','修改俸禄金奖励规则',[['活动','俸禄金 · 11月（1203）'],['流水倍数（按游戏类型）','slot 1x, casino 3x, arcade 2x, poker 5x, fishing 2x, bingo 3x','slot 1x, casino 2x, arcade 2x, poker 5x, fishing 2x, bingo 3x'],['安慰奖金额 / 月','1500','2000']]],
+ ['ac_francis','提款','2026-11-14 11:30:40','提款审核确定通过',[['内容','提款单 W2611140231']]],
+ ['cs_kei','俸禄金','2026-11-14 10:58:02','关闭俸禄金预算告警',[['活动','俸禄金 · 11月（1203）'],['消耗比例','72%']]],
+ ['cs_kei','俸禄金','2026-11-13 16:20:11','导出俸禄金数据报表',[['活动','俸禄金 · 11月（1203）'],['筛选','2026-11-01 ~ 2026-11-13 · 全部']]],
+ ['sa_fast','系统参数','2026-11-13 15:51:14','系统参数保存or修改',[['内容','系统参数']]],
+ ['cs_kei','俸禄金','2026-11-01 00:00:05','开启俸禄金活动',[['活动','俸禄金 · 11月（1203）'],['活动状态','未开启','进行中']]],
+ ['cs_kei','俸禄金','2026-10-31 23:59:58','关闭俸禄金活动',[['活动','俸禄金 · 10月（1202）'],['活动状态','进行中','已停用']]],
+ ['cs_kei','俸禄金','2026-10-30 14:12:45','导入俸禄金白名单',[['活动','俸禄金 · 11月（1203）'],['导入人数','12'],['名单总人数','12']]],
+ ['cs_kei','俸禄金','2026-10-29 10:05:33','修改俸禄金活动配置',[['活动','俸禄金 · 11月（1203）'],['条件：VIP 等级','未勾选','勾选'],['VIP 等级 ≥','','40']]],
+ ['cs_kei','俸禄金','2026-10-28 15:31:07','修改俸禄金内容配置',[['活动','俸禄金 · 11月（1203）'],['顶部横幅','未上传','已上传'],['Rules 文案','（原文案）','（新文案）']]],
+ ['cs_kei','俸禄金','2026-10-28 15:20:16','新增俸禄金活动',[['活动','俸禄金 · 11月（1203）'],['活动时间','2026-11-01 ~ 2026-11-30'],['参与条件','近3个月亏损 ≥ ₱50,000'],['活动总预算','₱1,000,000.00']]],
+ ['ac_francis','提款','2026-10-28 11:02:30','提款锁定',[['内容','提款单 W2610280112']]]
+].map(r=>({by:r[0],type:r[1],t:r[2],ev:r[3],d:r[4]}));
+function addLog(ev,d){const n=new Date(),p=x=>String(x).padStart(2,'0');LOGS.unshift({by:'cs_kei',type:'俸禄金',t:`2026-11-14 ${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`,ev,d,fresh:true});}
+let LF={u:'',type:'',q:'',from:'2026-10-01',to:'2026-11-14'};
+function showLog(){E=null;nav('log');
+ const rows=LOGS.filter(r=>(!LF.u||r.by.includes(LF.u))&&(!LF.type||r.type===LF.type)&&(!LF.q||(r.ev+JSON.stringify(r.d)).includes(LF.q))&&r.t.slice(0,10)>=LF.from&&r.t.slice(0,10)<=LF.to);
+ const pr=pgSlice('log',rows);
+ $('view').innerHTML=`<div class="page"><div class="flt">
+  <input class="in" style="width:170px" placeholder="操作人名称" value="${LF.u}" oninput="LF.u=this.value">
+  <select class="in" style="width:160px" onchange="LF.type=this.value"><option value="">消息类型</option>${['俸禄金','短信','提款','系统参数'].map(x=>`<option ${x===LF.type?'selected':''}>${x}</option>`).join('')}</select>
+  <input class="in" type="date" style="width:150px" value="${LF.from}" onchange="LF.from=this.value"> ~ <input class="in" type="date" style="width:150px" value="${LF.to}" onchange="LF.to=this.value">
+  <input class="in" style="width:200px" placeholder="内容模糊搜索" value="${LF.q}" oninput="LF.q=this.value">
+  <span class="btn" onclick="PG.log.p=1;showLog()">搜索</span></div>
+ <table class="t"><tr><th>操作人ID</th><th>操作人名称</th><th>操作类型</th><th>操作IP</th><th>操作日期</th><th>事件</th><th>详情</th></tr>
+ ${pr.length?pr.map((r,k)=>`<tr style="${r.fresh?'background:#f0f9eb':''}"><td>${OPS[r.by]}</td><td>${r.by}</td><td>${r.type==='俸禄金'?'<b style="color:#409eff">俸禄金</b>':r.type}</td><td>180.232.98.142</td><td>${r.t}</td><td>${r.ev}</td><td><span class="lk" onclick="logDetail(${LOGS.indexOf(r)})">详情</span></td></tr>`).join(''):'<tr><td colspan="7" style="color:#999;padding:30px">No Data</td></tr>'}</table>
+ ${pager('log',rows.length)}
+ <div class="hint" style="margin-top:10px">俸禄金后台的新增、修改（活动配置 / 奖励规则 / 内容配置）、开启、关闭、名单导入、预算告警关闭、报表导出，均写入操作日志，操作类型为「俸禄金」。修改类日志在详情中记录变更字段的修改前 / 修改后。</div></div>`;}
+function logDetail(i){const r=LOGS[i];const two=r.d.filter(x=>x.length===3),one=r.d.filter(x=>x.length<3);
+ dlg(`<h4>操作详情</h4><table class="t" style="margin-bottom:10px"><tr><th style="width:110px">操作人</th><td style="text-align:left">${r.by}（${OPS[r.by]}）</td></tr><tr><th>操作类型</th><td style="text-align:left">${r.type}</td></tr><tr><th>事件</th><td style="text-align:left">${r.ev}</td></tr><tr><th>操作日期</th><td style="text-align:left">${r.t}</td></tr>${one.map(x=>`<tr><th>${x[0]}</th><td style="text-align:left">${x[1]}</td></tr>`).join('')}</table>
+ ${two.length?`<table class="t"><tr><th>字段</th><th>修改前</th><th>修改后</th></tr>${two.map(x=>`<tr><td>${x[0]}</td><td style="color:#909399">${x[1]||'—'}</td><td style="color:#409eff;font-weight:600">${x[2]||'—'}</td></tr>`).join('')}</table>`:''}
+ <div class="foot" style="justify-content:flex-end;border:none;margin-top:12px"><span class="btn pl" onclick="closeD()">关闭窗口</span></div>`);$('dlg').style.width='620px';}
 showList();
 /* ---------- LANGUAGE ---------- */
 const TR=[["请填写：", "Please fill in: "],["、", ", "],["活动已开启", "Activity opened"],["活动已关闭", "Activity closed"],["开启活动", "Open activity"],["确认开启「", "Open \""],["」？开启后玩家端立即可见。", "\"? Players will see it immediately."],["关闭活动", "Close activity"],["确认关闭「", "Close \""],["」？关闭后玩家端不可见；已生成未领取的奖励及待还款记录保留。", "\"? Players will no longer see it; generated unclaimed rewards and repayment records are kept."],["确定关闭", "Confirm close"],["确定", "Confirm"],["导入成功 3 人", "Imported 3 users"],["模板已下载", "Template downloaded"],["名单共", "Users in list:"],["上传成功", "Uploaded"],["导出任务已创建", "Export task created"],["奖励规则中的数值需大于 0", "Values in Reward Rules must be greater than 0"],["请填写预支解锁的 VIP 等级", "Enter the VIP levels for unlocking advances"],["保存失败：「", "Save failed: \""],["」正在进行中，同一时间只能开启一个活动", "\" is in progress; only one activity can be open at a time"],["保存成功", "Saved"],["配置已完成，可在活动列表开启活动", "All settings done. Open the activity from the list"],["无法开启：请先完成「", "Cannot open: complete \""],["已用", "Used"],
@@ -279,7 +356,7 @@ const TR=[["请填写：", "Please fill in: "],["、", ", "],["活动已开启",
 ['选项来自「活动配置 › 活动类别管理','Options from Promotion Settings › Category Management'],['时间配置','Time'],['未配置时与活动时间一致','Same as activity period if empty'],['参与条件','Eligibility'],
 ['按 VIP 等级 + 近 3 个月亏损金额','By VIP level + 3-month loss'],['按近 3 个月亏损金额','By 3-month loss'],['二选一；选第二种时，两个条件需同时满足','Choose one; with the second, both conditions must be met'],
 ['VIP 最低等级','Minimum VIP level'],['及以上','and above'],['最低亏损金额','Minimum loss'],['近 3 个完整自然月符合条件亏损 ≥ 该金额','3-month qualified loss ≥ this amount'],['（与 VIP 等级同时满足）',' (together with the VIP level)'],['可参与',' to join'],
-['名单微调','List adjustment'],['白名单强制纳入（忽略参与门槛）；黑名单强制排除。仅支持 .csv / .txt','Whitelist always included (ignores threshold); blacklist always excluded. .csv / .txt only'],['白名单','Whitelist'],['黑名单','Blacklist'],
+['名单微调','List adjustment'],['白名单最高权限：强制纳入，不受参与条件和 ₱4 限制（当月返还 < ₱4 时按安慰奖兜底）；黑名单强制排除。仅支持 .csv / .txt','Whitelist has top priority: always included, ignoring the eligibility and the ₱4 limit (consolation as fallback if the monthly return is < ₱4); blacklist always excluded. .csv / .txt only'],['白名单','Whitelist'],['黑名单','Blacklist'],
 ['（逗号 / 分号 / 换行分隔）',' (comma / semicolon / new line)'],['批量导入','Import'],['下载模板','Template'],['查看名单','View list'],['已导入','Imported'],[' 人',''],
 ['活动总预算','Total budget'],['预算金额','Budget'],['实际发放占预算','Actual payout of budget'],['已用金额 = 实际发放金额 = 领取 + 预支 − 还款','Used = actual payout = claims + advances − repayments'],['预算','Budget'],
 ['返还配置','Return'],['结算周期','Settlement cycle'],['每月 1 号 · 近 3 个完整自然月滚动','1st monthly · last 3 full months'],['返还除数','Return divisor'],['当月返还 = 3 个月亏损 ÷ 除数','Monthly return = 3-month loss ÷ divisor'],
@@ -287,18 +364,144 @@ const TR=[["请填写：", "Please fill in: "],["、", ", "],["活动已开启",
 ['领奖充值比例','Deposit ratio'],['%，领取与预支均需满足充值要求 = 本次金额 × 比例（任意入口充值到账均可计入）','%, claims and advances require deposit = amount × ratio (any channel counts)'],
 ['预支配置','Advance'],['解锁：历史累计领取期数 ≥','Unlock: claimed periods ≥'],['或 VIP 等级 ≥','or VIP level ≥'],['可预支范围','Range'],['可用时间','Available'],['下一期','Next period'],['解锁后下个月','Month after unlock'],['本月剩余全部期数','All remaining this month'],['功能','Feature'],
 ['还款方式','Repayment'],['从可用余额全额扣除（不支持部分还款）','Full deduction from balance (no partial)'],['还款后','After repayment'],
-['还款成功后，被预支的期数立即恢复为可领取（Claim），由用户手动领取，不论原定周五是否已到；预支时已满足充值要求，无需再充值。仅限当月：被新月份数据覆盖后不再恢复','Advanced periods become claimable (Claim) right away and the user claims them manually, whether or not the original Friday has come; no further deposit. This month only: not restored once replaced by the new month'],
+['还款成功后，被预支的期数立即恢复为可领取（Claim），由用户手动领取，不论原定领奖日是否已到；预支时已满足充值要求，无需再充值。仅限当月：被新月份数据覆盖后不再恢复','Advanced periods become claimable (Claim) right away and the user claims them manually, whether or not the original release date has come; no further deposit. This month only: not restored once replaced by the new month'],
 ['流水配置','Wagering'],['流水倍数','Wagering multiplier'],['倍 · 流水要求 = 奖励金额 × 倍数','x · wagering = reward × multiplier'],['适用于','Applies to'],['累计领取','Accumulated claims'],
 ['试算','Trial'],['3 个月亏损 ₱600,000 → 当月返还','3-month loss ₱600,000 → monthly return'],['每期充值要求','deposit per period'],['每期流水要求','wagering per period'],['每期','per period'],
 ['图片设置','Images'],['活动页顶部横幅','Top banner'],['选择文件','Choose file'],['未上传','Not uploaded'],['仅支持 .PNG .JPG，不超过 2MB，建议 750×360','.PNG .JPG only, max 2MB, 750×360 recommended'],['活动页底部图','Footer image'],['选填','Optional'],
 ['Rules 文案','Rules text'],['规则内容','Rules content'],['插入变量：','Insert variable:'],['请输入玩家端 Rules 文案，可插入上方变量','Enter the player-side Rules text; insert variables above'],['变量在玩家端自动替换为「奖励规则」中的当前数值；右侧为玩家端预览','Variables are replaced with current Reward Rules values on the player side; preview on the right'],
-['{充值比例}','{deposit_ratio}'],['{流水倍数}','{wagering}'],['{AB期数}','{ab_periods}'],['{AB等级}','{ab_vip}'],['{SA期数}','{sa_periods}'],['{SA等级}','{sa_vip}'],['{返还除数}','{divisor}'],
+['{充值比例}','{deposit_ratio}'],['{游戏流水}','{game_wagering}'],['{AB期数}','{ab_periods}'],['{AB等级}','{ab_vip}'],['{SA期数}','{sa_periods}'],['{SA等级}','{sa_vip}'],['{返还除数}','{divisor}'],
 ['活动配置','Activity Settings'],['奖励规则','Reward Rules'],['内容配置','Content'],['活动名称','Activity name'],['活动状态','Status'],['活动类型','Promotion type'],
 ['结算时达标用户当月返还合计','Total monthly return of eligible users'],['领取 + 预支 − 还款','claims + advances − repayments'],['领取金额','Claimed'],['预支金额','Advanced'],['还款金额','Repaid'],
 ['会员账号：','Member:'],['请输入账号','Account'],['事件：','Event:'],['时间：','Time:'],['🔍 搜索','🔍 Search'],['重置','Reset'],['导出','Export'],['会员账号','Member'],['结算月','Settlement month'],['3个月亏损','3-month loss'],['当月返还','Monthly return'],
 ['事件','Event'],['金额','Amount'],['充值金额','Deposit'],['流水要求','Wagering req.'],['流水完成','Wagering done'],['已完成','Completed'],['期数','Period'],['领取','Claim'],['预支','Advance'],['还款','Repay'],['全部','All'],['时间','Time'],
 ['活动类型','Activity type'],['活动名称','Activity name'],['操作','Actions'],['查看','View'],['关闭','Dismiss'],['数据','Data'],['修改','Edit'],['状态','Status'],['取消','Cancel'],['倍','x']
 ];
+TR.push(...[
+["个完整自然月（单位：月）", "full calendar months (unit: month)"],
+["统计周期（月）", "Statistics period (months)"],
+["统计周期", "Statistics period"],
+["每月 1 号按此周期统计亏损，用于判定参与资格和计算当月返还", "On the 1st of each month, loss is counted over this period to check eligibility and calculate the monthly return"],
+["至少勾选一项；同时勾选时，", "Select at least one; when both are selected, "],
+["满足其一即可参与", "meeting either one is enough to join"],
+["亏损金额 ≥", "Loss ≥"],
+["亏损金额", "Loss amount"],
+["个月符合条件亏损 ≥", "-month qualified loss ≥"],
+[" 个月符合条件亏损 ≥", "-month qualified loss ≥"],
+["VIP 等级 ≥", "VIP level ≥"],
+["VIP 等级", "VIP level"],
+["展示规则", "Display rule"],
+["满足参与条件、且计算出的当月返还 ≥ ₱4（每期 ≥ ₱1）的用户，可看到活动入口（Banner、挂件）并激活活动；其余用户完全看不到活动入口。", "Users who meet the eligibility and whose calculated monthly return is ≥ ₱4 (≥ ₱1 per period) see the activity entry (banner, widget) and activate the activity; other users do not see the entry at all."],
+["已激活的用户永久可见：之后某月不再满足条件（或当月返还 &lt; ₱4）时，改为领取安慰奖（见「奖励规则 › 安慰奖」）。", "Activated users always see it: in a later month when they no longer qualify (or the monthly return is < ₱4), they get the consolation reward instead (see Reward Rules › Consolation reward)."],
+["已激活的用户永久可见：之后某月不再满足条件（或当月返还 < ₱4）时，改为领取安慰奖（见「奖励规则 › 安慰奖」）。", "Activated users always see it: in a later month when they no longer qualify (or the monthly return is < ₱4), they get the consolation reward instead (see Reward Rules › Consolation reward)."],
+["统计月数在「活动配置 › 参与条件」设置", "Months are set in Activity Settings › Eligibility"],
+["当月返还 = 近 ", "Monthly return = loss of last "],
+[" 个月亏损 ÷ 除数；当月返还 < ₱4 时不展示活动（已激活用户改发安慰奖）", " months ÷ divisor; if the monthly return is < ₱4 the activity is not shown (activated users get the consolation reward)"],
+["每月 1、8、15、22 号各生成 1 期；最多累计 4 期，超出时最新一期覆盖最早一期", "One on each of the 1st, 8th, 15th and 22nd; up to 4 accumulated, newest replaces oldest"],
+["每月 1 号 · 近 ", "1st monthly · last "],
+[" 个完整自然月滚动", " full months"],
+["（流水要求见下方「流水配置」）", "(see Wagering below for wagering)"],
+["个月亏损 ₱600,000", "-month loss ₱600,000"],
+["安慰奖金额 / 月", "Consolation reward / month"],
+["安慰奖金额", "Consolation amount"],
+["₱ / 月 · 均分 4 期（每期", "₱ / month · split into 4 periods ("],
+["）", ")"],
+["（", " ("],
+["发放对象", "Who gets it"],
+["已激活过本活动、但本月不满足参与条件（或当月返还 &lt; ₱4）的用户", "Users who have activated this activity but do not qualify this month (or whose monthly return is < ₱4)"],
+["已激活过本活动、但本月不满足参与条件（或当月返还 < ₱4）的用户", "Users who have activated this activity but do not qualify this month (or whose monthly return is < ₱4)"],
+["领取规则", "Claim rules"],
+["与正常奖励完全一致：同样 4 期、领奖日、充值比例、Advance / 还款、流水要求；只是金额不同", "Same as the normal reward: 4 periods, release dates, deposit ratio, Advance / repay and wagering; only the amount differs"],
+["安慰奖", "Consolation"],
+["按游戏类型", "By game type"],
+["游戏类型", "Game type"],
+["计入流水", "Counts"],
+["每期流水要求（试算）", "Wagering per period (trial)"],
+["不计入", "Not counted"],
+["计算方式", "Calculation"],
+["某游戏类型的流水要求 = 奖励金额 × 该类型倍数。玩家可在多个类型中投注，完成度 = Σ（该类型有效投注 ÷ 该类型流水要求），达到 100% 即完成；未勾选的类型投注不计入", "Wagering for a game type = reward × that type's multiplier. Players may bet across types; progress = Σ (valid bets in the type ÷ wagering for the type), done at 100%. Bets in unselected types do not count"],
+["正常奖励与安慰奖 · Claim · Advance Bonus · Super Advance", "Normal and consolation rewards · Claim · Advance Bonus · Super Advance"],
+["至少选择一个计入流水的游戏类型", "Select at least one game type that counts toward wagering"],
+["参与条件（至少一项）", "Eligibility (at least one)"],
+["奖励类型", "Reward type"],
+["统计期亏损", "Period loss"],
+["流水完成度", "Wagering progress"],
+["正常", "Normal"],
+["日志管理", "Logs"],
+["登录日志", "Login log"],
+["操作日志", "Operation log"],
+["会员操作日志", "Member operation log"],
+["登录审计日志", "Login audit log"],
+["演示中不可点击", "Not clickable in this demo"],
+["操作人名称", "Operator name"],
+["操作人ID", "Operator ID"],
+["操作类型", "Operation type"],
+["操作IP", "Operation IP"],
+["操作日期", "Operation date"],
+["操作人", "Operator"],
+["操作详情", "Operation details"],
+["详情", "Details"],
+["消息类型", "Message type"],
+["内容模糊搜索", "Fuzzy search"],
+["搜索", "Search"],
+["短信记录跟踪", "SMS record tracking"],
+["短信", "SMS"],
+["提款审核确定通过", "Withdrawal approved"],
+["提款锁定", "Withdrawal locked"],
+["提款", "Withdrawal"],
+["系统参数保存or修改", "System parameter saved or changed"],
+["系统参数", "System parameter"],
+["新增俸禄金活动", "Add Loyalty Share Rewards activity"],
+["修改俸禄金活动配置", "Edit Loyalty Share Rewards activity settings"],
+["修改俸禄金奖励规则", "Edit Loyalty Share Rewards reward rules"],
+["修改俸禄金内容配置", "Edit Loyalty Share Rewards content"],
+["开启俸禄金活动", "Open Loyalty Share Rewards activity"],
+["关闭俸禄金活动", "Close Loyalty Share Rewards activity"],
+["关闭俸禄金预算告警", "Dismiss Loyalty Share Rewards budget alert"],
+["导出俸禄金数据报表", "Export Loyalty Share Rewards data report"],
+["导入俸禄金白名单", "Import Loyalty Share Rewards whitelist"],
+["导入俸禄金黑名单", "Import Loyalty Share Rewards blacklist"],
+["俸禄金后台的新增、修改（活动配置 / 奖励规则 / 内容配置）、开启、关闭、名单导入、预算告警关闭、报表导出，均写入操作日志，操作类型为「俸禄金」。修改类日志在详情中记录变更字段的修改前 / 修改后。", "Adding, editing (Activity Settings / Reward Rules / Content), opening and closing activities, list imports, dismissing budget alerts and report exports in Loyalty Share Rewards are all written to the operation log, with operation type \"Loyalty Share Rewards\". Edit logs record each changed field before / after in Details."],
+["字段", "Field"],
+["修改前", "Before"],
+["修改后", "After"],
+["变更", "Change"],
+["无字段变化（仅保存）", "No field changed (saved only)"],
+["导入人数", "Imported"],
+["名单总人数", "Total in list"],
+["筛选", "Filter"],
+["活动状态", "Status"],
+["活动", "Activity"],
+["未开启", "Not opened"],
+["已停用", "Stopped"],
+["勾选", "Selected"],
+["未勾选", "Not selected"],
+["（原文案）", "(old text)"],
+["（新文案）", "(new text)"],
+["已上传", "Uploaded"],
+["返还除数", "Return divisor"],
+["领奖充值比例 %", "Deposit ratio %"],
+["AB 解锁期数", "AB unlock periods"],
+["AB 解锁 VIP", "AB unlock VIP"],
+["SA 解锁期数", "SA unlock periods"],
+["SA 解锁 VIP", "SA unlock VIP"],
+["流水倍数（按游戏类型）", "Wagering multiplier (by game type)"],
+["顶部横幅", "Top banner"],
+["活动开始", "Start"],
+["活动结束", "End"],
+["展示开始", "Display start"],
+["展示结束", "Display end"],
+["条件：亏损金额", "Condition: loss"],
+["条件：VIP 等级", "Condition: VIP level"],
+["{游戏流水}", "{game_wagering}"],
+["近", "last "],
+["或 ", "or "],
+["个月亏损", "-month loss"],
+[" 倍", "x"],
+["倍", " x"],
+["。", ". "],
+["，", ", "]
+]);
+TR.push(["白名单最高权限：强制纳入，不受参与条件和 ₱4 限制（当月返还 < ₱4 时按安慰奖兜底）；黑名单强制排除。仅支持 .csv / .txt","Whitelist has top priority: always included, ignoring the eligibility and the ₱4 limit (consolation as fallback if the monthly return is < ₱4); blacklist always excluded. .csv / .txt only"],["；白名单用户当月返还 &lt; ₱4 时也发放安慰奖（兜底）","; also whitelisted users whose monthly return is < ₱4 (fallback)"],["；白名单用户当月返还 < ₱4 时也发放安慰奖（兜底）","; also whitelisted users whose monthly return is < ₱4 (fallback)"]);
 TR.sort((a,b)=>b[0].length-a[0].length);
 function trS(s){if(!/[一-鿿「」：]/.test(s))return s;for(const [a,b] of TR){if(s.includes(a))s=s.split(a).join(b);}return s;};
 function translateAll(){const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const t=trS(n.nodeValue);if(t!==n.nodeValue)n.nodeValue=t;}
